@@ -87,7 +87,7 @@ const SCREENS = {
   },
   'apps/native/src/directo/event-form.tsx': {
     use: null,
-    why: 'Formulario embebido; el scroll lo pone la superficie que lo monta (hoy staff/directo.tsx, con KeyboardScrollView).',
+    why: 'Formulario embebido; el scroll lo ponen sus DOS superficies, staff/directo.tsx (alta suelta) y staff/carga-acta.tsx (carga en cadena), las dos con KeyboardScrollView.',
   },
   'apps/native/src/ui/directory-filters.tsx': {
     use: null,
@@ -101,7 +101,10 @@ const SCREENS = {
 
 /** Pantallas SIN campo propio que cargan con el scroll de un hijo que sí tiene. */
 const SCROLL_POR_UN_HIJO = {
-  'apps/native/src/screens/staff/directo.tsx': 'Monta QuickEntry, que trae el campo del gol.',
+  'apps/native/src/screens/staff/directo.tsx':
+    'Monta QuickEntry (campo del gol), la hoja de corrección y el formulario de alta.',
+  'apps/native/src/screens/staff/carga-acta.tsx':
+    'Monta EventForm, que trae el minuto y el dorsal de la carga en cadena.',
   'apps/native/src/screens/direction/jugadores.tsx':
     'Monta DirectoryFilters, que trae el buscador.',
   'apps/native/src/screens/direction/cuerpo-tecnico.tsx':

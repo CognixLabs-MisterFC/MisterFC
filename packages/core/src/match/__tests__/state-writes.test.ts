@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
+  prepareMatchSheetFromClient,
   startMatchFromClient,
   pauseClockFromClient,
   resumeClockFromClient,
@@ -44,6 +45,8 @@ type Opts = {
    * en la MISMA lectura de `events` que ya hacían estas pruebas.
    */
   periodCount?: number;
+  /** `categories.half_duration_minutes` del equipo del evento. */
+  halfMinutes?: number;
   failOn?: { table: string; op: 'insert' | 'update' | 'delete'; code?: string };
 };
 
@@ -61,7 +64,14 @@ function makeClient(opts: Opts, userId: string | null = 'u-1') {
               type: 'match',
               // `loadPeriodCount` lee esto con un select anidado
               // (teams!inner.categories!inner.period_count).
-              teams: { categories: { period_count: opts.periodCount ?? 2 } },
+              teams: {
+                categories: {
+                  period_count: opts.periodCount ?? 2,
+                  // `prepareMatchSheet` lee la DURACIÓN en la misma consulta que el
+                  // número de periodos: las dos columnas del reloj viajan juntas.
+                  half_duration_minutes: opts.halfMinutes ?? 45,
+                },
+              },
             }
           : opts.event;
       case 'match_state':
@@ -294,7 +304,10 @@ describe('O2-9a · startNextPeriod', () => {
   });
 
   it('empezar 2ª parte inserta match_periods', async () => {
-    const { client, writes } = makeClient({ matchState: { status: 'live' }, periods: [endedFirst] });
+    const { client, writes } = makeClient({
+      matchState: { status: 'live' },
+      periods: [endedFirst],
+    });
     const r = await startNextPeriodFromClient(client, { event_id: EVENT, period: 'second_half' });
     expect(r).toEqual({ ok: true });
     expect(writes.find((w) => w.table === 'match_periods' && w.op === 'insert')).toBeTruthy();
@@ -380,7 +393,7 @@ describe('O2-9a · reopenMatch + gate', () => {
     const { client, writes } = makeClient({ matchState: { status: 'closed', reopened_count: 0 } });
     expect(await reopenMatchFromClient(client, ref)).toEqual({ ok: true });
     const upd = writes.find((w) => w.table === 'match_state' && w.op === 'update');
-    expect((upd!.payload as { status?: string; reopened_count?: number })).toMatchObject({
+    expect(upd!.payload as { status?: string; reopened_count?: number }).toMatchObject({
       status: 'live',
       reopened_count: 1,
     });
@@ -529,5 +542,141 @@ describe('tres tiempos · las escrituras leen period_count de la categoría', ()
       events: [],
     });
     expect(await finishMatchFromClient(client, ref)).toEqual({ ok: true });
+  });
+});
+
+describe('prepareMatchSheetFromClient · reconstruir el acta de un partido ya jugado', () => {
+  const official = { id: 'lineup-1' };
+  const positions = [
+    { player_id: 'p-1', position_code: 'GK' },
+    { player_id: 'p-2', position_code: 'DF' },
+  ];
+
+  it('sin usuario → forbidden', async () => {
+    const { client } = makeClient({}, null);
+    expect(await prepareMatchSheetFromClient(client, ref)).toEqual({
+      ok: false,
+      error: 'forbidden',
+    });
+  });
+
+  // LA PUERTA, Y VA ANTES DE ESCRIBIR. Esto no es una transacción: si el gate se
+  // comprobara después, quedaría un partido a medio reconstruir y nada lo desharía.
+  it('sin alineación oficial → no_official_lineup, y NO escribe NADA', async () => {
+    const { client, writes } = makeClient({ matchState: null, official: null });
+    expect(await prepareMatchSheetFromClient(client, ref)).toEqual({
+      ok: false,
+      error: 'no_official_lineup',
+    });
+    expect(writes).toHaveLength(0);
+  });
+
+  it('una alineación oficial VACÍA tampoco vale (no se inventa un once)', async () => {
+    const { client, writes } = makeClient({ matchState: null, official, positions: [] });
+    expect(await prepareMatchSheetFromClient(client, ref)).toEqual({
+      ok: false,
+      error: 'no_official_lineup',
+    });
+    expect(writes).toHaveLength(0);
+  });
+
+  it('congela el once, siembra los periodos y cierra el acta', async () => {
+    const { client, writes } = makeClient({ matchState: null, official, positions });
+    expect(await prepareMatchSheetFromClient(client, ref)).toEqual({ ok: true });
+
+    const starters = writes.find((w) => w.table === 'match_starters');
+    expect(starters?.op).toBe('insert');
+    expect((starters?.payload as unknown[]).length).toBe(2);
+
+    const periodos = writes.find((w) => w.table === 'match_periods');
+    expect((periodos?.payload as { period: string }[]).map((p) => p.period)).toEqual([
+      'first_half',
+      'second_half',
+    ]);
+
+    const estado = writes.find((w) => w.table === 'match_state');
+    expect((estado?.payload as { status: string }).status).toBe('closed');
+  });
+
+  // Lo que ata esta pieza al arreglo de los periodos: en querubín son TRES, y la
+  // duración sale de la categoría, no de un 45 por defecto.
+  it('en una categoría de TRES tiempos siembra tres, con su duración', async () => {
+    const { client, writes } = makeClient({
+      matchState: null,
+      official,
+      positions,
+      periodCount: 3,
+      halfMinutes: 12,
+    });
+    expect(await prepareMatchSheetFromClient(client, ref)).toEqual({ ok: true });
+
+    const periodos = writes.find((w) => w.table === 'match_periods')?.payload as {
+      period: string;
+      base_offset_seconds: number;
+      accumulated_seconds: number;
+    }[];
+    expect(periodos.map((p) => p.period)).toEqual(['first_half', 'second_half', 'third_period']);
+    expect(periodos.map((p) => p.base_offset_seconds)).toEqual([0, 720, 1440]);
+    expect(periodos.every((p) => p.accumulated_seconds === 720)).toBe(true);
+  });
+
+  it('idempotente: un partido ya CERRADO no se toca', async () => {
+    const { client, writes } = makeClient({
+      matchState: { status: 'closed' },
+      official,
+      positions,
+    });
+    expect(await prepareMatchSheetFromClient(client, ref)).toEqual({ ok: true });
+    expect(writes).toHaveLength(0);
+  });
+
+  it('idempotente: un partido EN VIVO tampoco', async () => {
+    const { client, writes } = makeClient({ matchState: { status: 'live' }, official, positions });
+    expect(await prepareMatchSheetFromClient(client, ref)).toEqual({ ok: true });
+    expect(writes).toHaveLength(0);
+  });
+
+  it('con el once YA congelado no vuelve a congelarlo', async () => {
+    const { client, writes } = makeClient({
+      matchState: { status: 'not_started' },
+      starters: [{ player_id: 'p-1' }],
+      official: null, // y sin alineación oficial: ya no hace falta
+      positions: [],
+    });
+    expect(await prepareMatchSheetFromClient(client, ref)).toEqual({ ok: true });
+    expect(writes.some((w) => w.table === 'match_starters')).toBe(false);
+    expect(writes.some((w) => w.table === 'match_periods')).toBe(true);
+  });
+
+  it('con los periodos YA sembrados no los duplica', async () => {
+    const { client, writes } = makeClient({
+      matchState: { status: 'not_started' },
+      official,
+      positions,
+      periods: [runningPeriod],
+    });
+    expect(await prepareMatchSheetFromClient(client, ref)).toEqual({ ok: true });
+    expect(writes.some((w) => w.table === 'match_periods')).toBe(false);
+  });
+
+  it('un evento que no es partido → invalid', async () => {
+    const { client, writes } = makeClient({
+      event: { id: EVENT, club_id: 'club-1', team_id: 't-1', type: 'training' },
+    });
+    expect(await prepareMatchSheetFromClient(client, ref)).toEqual({
+      ok: false,
+      error: 'invalid',
+    });
+    expect(writes).toHaveLength(0);
+  });
+
+  it('un partido sin equipo → invalid', async () => {
+    const { client } = makeClient({
+      event: { id: EVENT, club_id: 'club-1', team_id: null, type: 'match' },
+    });
+    expect(await prepareMatchSheetFromClient(client, ref)).toEqual({
+      ok: false,
+      error: 'invalid',
+    });
   });
 });

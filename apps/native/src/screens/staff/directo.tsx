@@ -30,7 +30,6 @@ import {
   type ClockPeriod,
   type ClockWriteError,
   type DetailEvent,
-  type EventEditError,
   type EventEditOutcome,
   type LineupRosterPlayer,
   type MatchDetail,
@@ -41,7 +40,7 @@ import {
 } from '@misterfc/core';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
-import { EventEditSheet } from '@/directo/event-edit-sheet';
+import { EventEditSheet, editErrorKeyFor } from '@/directo/event-edit-sheet';
 import { EventForm, type AddEventInput } from '@/directo/event-form';
 import { useApp } from '@/auth/context';
 import { useSession } from '@/auth/session';
@@ -118,26 +117,6 @@ function errorKeyFor(e: ClockWriteError): string {
       return 'directo_control.err_not_live';
     default:
       return 'directo_control.err_generic';
-  }
-}
-
-/** Error de una corrección → clave de cadena. Hermano de `errorKeyFor` del reloj. */
-function editErrorKeyFor(e: EventEditError): string {
-  switch (e) {
-    case 'forbidden':
-      return 'directo_control.err_forbidden';
-    case 'not_editable':
-      return 'directo_edit.not_editable';
-    case 'not_found':
-      return 'directo_edit.errors.not_found';
-    case 'no_period':
-      return 'directo_edit.errors.no_period';
-    case 'player_not_in_team':
-      return 'directo_edit.errors.player_not_in_team';
-    case 'invalid':
-      return 'directo_edit.errors.invalid';
-    default:
-      return 'directo_edit.errors.generic';
   }
 }
 
@@ -503,6 +482,19 @@ export function DirectoControlScreen({ eventId }: { eventId: string | null }) {
                 />
               ) : null}
             </>
+          ) : null}
+
+          {/* CARGA MANUAL del acta. Se ofrece cuando el partido NO está en juego: o no
+              se abrió nunca (el caso real — el entrenador estaba solo y no pudo
+              apuntar nada) o ya terminó y falta meter lo de la libreta. En vivo no
+              aparece: ahí lo que toca es la entrada rápida de arriba. */}
+          {status !== 'live' ? (
+            <Btn
+              label={t('partido_directo.quick.link')}
+              accent={accent}
+              disabled={false}
+              onPress={() => router.push({ pathname: '/staff/carga-acta', params: { eventId } })}
+            />
           ) : null}
 
           {status === 'closed' ? (

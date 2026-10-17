@@ -153,6 +153,7 @@ export * from './closed-matches';
 
 // O2-9a — ESCRITURA del reloj/estado del directo (staff).
 export {
+  prepareMatchSheetFromClient,
   startMatchFromClient,
   pauseClockFromClient,
   resumeClockFromClient,

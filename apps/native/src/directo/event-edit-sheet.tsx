@@ -1,8 +1,33 @@
 import { useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
-import type { EventEditAvailability, LineupRosterPlayer } from '@misterfc/core';
+import type { EventEditAvailability, EventEditError, LineupRosterPlayer } from '@misterfc/core';
 import { useTranslations } from '@/locale/provider';
 import { ActorGrid, rosterChip } from './quick-entry';
+
+/**
+ * Error de una corrección o de un alta → clave de cadena. Hermano de `errorKeyFor`
+ * del reloj. Vive aquí, y exportado, porque lo usan las DOS superficies del acta: la
+ * hoja de corrección y la carga en cadena. Escrito dos veces se desincroniza, y la
+ * forma en que se nota es la peor: una frase que no corresponde al fallo.
+ */
+export function editErrorKeyFor(e: EventEditError): string {
+  switch (e) {
+    case 'forbidden':
+      return 'directo_control.err_forbidden';
+    case 'not_editable':
+      return 'directo_edit.not_editable';
+    case 'not_found':
+      return 'directo_edit.errors.not_found';
+    case 'no_period':
+      return 'directo_edit.errors.no_period';
+    case 'player_not_in_team':
+      return 'directo_edit.errors.player_not_in_team';
+    case 'invalid':
+      return 'directo_edit.errors.invalid';
+    default:
+      return 'directo_edit.errors.generic';
+  }
+}
 
 /**
  * CORREGIR un evento del directo desde la app: borrar, cambiar el minuto, cambiar el

@@ -37,7 +37,12 @@ const ARBOLES = ['apps/web/src', 'apps/native/src', 'packages/core/src'];
 /** El motor del reloj SÍ puede nombrar los periodos: es donde viven. */
 const MOTOR = ['packages/core/src/match/clock.ts', 'packages/core/src/match/phase.ts'];
 
-const INSERTA_PERIODOS = /from\(\s*'match_periods'\s*\)[\s\S]{0,400}?\.insert\(/;
+const INSERTA_PERIODOS = /from\(\s*'match_periods'\s*\)[\s\S]{0,400}?\.insert\(/g;
+
+/** Cuántas SIEMBRAS hay en un fichero (no cuántos ficheros siembran). */
+function siembras(src) {
+  return (src.match(INSERTA_PERIODOS) ?? []).length;
+}
 const LITERAL_SEGUNDA = /period:\s*'second_half'/;
 
 /**
@@ -85,11 +90,13 @@ function ficheros(dir) {
 
 const problemas = [];
 const sembradores = [];
+let totalSiembras = 0;
 
 for (const arbol of ARBOLES) {
   for (const rel of ficheros(arbol)) {
     const src = readFileSync(join(ROOT, rel), 'utf8');
-    if (!INSERTA_PERIODOS.test(src)) {
+    const n = siembras(src);
+    if (n === 0) {
       // Un literal de periodo en un insert, aunque no sea de match_periods, es la
       // forma exacta del fallo que motivó esto.
       if (LITERAL_SEGUNDA.test(src) && !MOTOR.includes(rel)) {
@@ -102,6 +109,7 @@ for (const arbol of ARBOLES) {
       continue;
     }
     sembradores.push(rel);
+    totalSiembras += n;
     if (!leeElCount(src)) {
       problemas.push(
         `· ${rel} — inserta en match_periods y NINGÚN \`.select()\` suyo lee ` +
@@ -119,13 +127,20 @@ for (const arbol of ARBOLES) {
   }
 }
 
-// CONTROL POSITIVO: si el barrido no encuentra sembradores, este guard no vigila
-// nada y su verde es el verde del vacío.
-if (sembradores.length < 2) {
+// CONTROL POSITIVO: si el barrido no encuentra siembras, este guard no vigila nada y
+// su verde es el verde del vacío.
+//
+// Cuenta SIEMBRAS, no ficheros. Nació contando ficheros y se puso rojo —con razón— el
+// día que `prepareMatchSheet` bajó a core: los dos sembradores pasaron a vivir en el
+// mismo fichero y el conteo cayó de 2 a 1 sin que nada estuviera mal. Lo que no puede
+// bajar de dos es el número de SIEMBRAS: el arranque del reloj (primera parte) y la
+// reconstrucción del acta (todos los periodos).
+if (totalSiembras < 2) {
   problemas.push(
-    `· el barrido encontró ${sembradores.length} sitio(s) que inserten en ` +
-      `match_periods, y hay al menos dos (prepareMatchSheet y el arranque del reloj). ` +
-      `El lector se ha roto: arregla el patrón antes de fiarte de este verde.`,
+    `· el barrido encontró ${totalSiembras} siembra(s) de match_periods en ` +
+      `${sembradores.length} fichero(s), y hay al menos dos: el arranque del reloj y ` +
+      `la reconstrucción del acta. El lector se ha roto: arregla el patrón antes de ` +
+      `fiarte de este verde.`,
   );
 }
 
@@ -136,6 +151,6 @@ if (problemas.length > 0) {
 }
 
 console.log(
-  `✓ check:periodos-sembrados — ${sembradores.length} sitios siembran periodos y los ` +
-    `${sembradores.length} LEEN period_count: ${sembradores.join(', ')}.`,
+  `✓ check:periodos-sembrados — ${totalSiembras} siembras de periodos en ` +
+    `${sembradores.length} fichero(s), todos LEEN period_count: ${sembradores.join(', ')}.`,
 );
