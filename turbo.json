@@ -5,6 +5,7 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
+      "env": ["MARKETING_SITE", "VERCEL_ENV"],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
     "lint": {
