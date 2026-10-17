@@ -12,7 +12,7 @@ import {
   PLAYER_FIELD_EVENT_TYPES,
   RIVAL_EVENT_TYPES,
 } from '../match/event';
-import { PENALTY_OUTCOMES, SHOOTOUT_OUTCOMES } from '../match/score';
+import { PENALTY_OUTCOMES, SHOOTOUT_OUTCOMES, isOwnGoal } from '../match/score';
 import { FOUL_KINDS, CORNER_SIDES } from '../match/team-events';
 
 const uuid = z.string().uuid({ message: 'invalid_id' });
@@ -371,8 +371,11 @@ export const addTimelineEventSchema = z
       return;
     }
     // AUTOGOL (mig 20261128000000): el único evento del rival que lleva jugador
-    // NUESTRO. Se reconoce por la forma de la fila, igual que `isOwnGoal` en core.
-    const esAutogol = v.side === 'rival' && v.type === 'goal' && !!v.player_id;
+    // NUESTRO. La regla NO se copia aquí — una copia es dos reglas que se separan el
+    // día que una cambie, y una mutación lo midió: tocar `isOwnGoal` dejaba esta
+    // puerta intacta. Se pide prestada la de core, que es la misma que usan la
+    // etiqueta del acta, la cola del directo y la edición del actor.
+    const esAutogol = isOwnGoal({ side: v.side, type: v.type, playerId: v.player_id });
 
     // Actor coherente con el bando para los tipos con actor.
     const needsActor =
