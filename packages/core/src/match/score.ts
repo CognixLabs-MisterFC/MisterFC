@@ -77,7 +77,22 @@ export function isOwnGoal(ev: {
   type: string;
   playerId?: string | null;
 }): boolean {
-  return ev.side === 'rival' && ev.type === 'goal' && !!ev.playerId;
+  return canBeOwnGoal(ev) && !!ev.playerId;
+}
+
+/**
+ * ¿Esta fila ADMITE autor nuestro? Es la pregunta que se hace una PANTALLA antes de
+ * ofrecer «en propia»: un gol del rival puede serlo; una tarjeta o un penalti del
+ * rival, no (el CHECK `match_events_actor_by_side` abre la forma solo para `goal`).
+ *
+ * Va aparte de `isOwnGoal` porque son dos preguntas distintas y las dos se hacen:
+ * `isOwnGoal` MIRA una fila que ya existe (¿lleva autor?), y esta decide si se puede
+ * OFRECER ponerlo. Cuatro superficies la hacían —el formulario de la app, el de web,
+ * la fila editable de la línea de tiempo y la hoja de corrección—, cada una con su
+ * copia del predicado.
+ */
+export function canBeOwnGoal(ev: { side: string; type: string }): boolean {
+  return ev.side === 'rival' && ev.type === 'goal';
 }
 
 export interface MatchScore {

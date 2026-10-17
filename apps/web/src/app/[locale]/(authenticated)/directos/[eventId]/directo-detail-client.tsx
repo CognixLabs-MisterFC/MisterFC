@@ -73,6 +73,9 @@ const LISTED_EVENTS = new Set([
 
 export function DirectoDetailClient({ initial }: Props) {
   const t = useTranslations('directos');
+  // El catálogo del directo (`partido_directo.*`) es el compartido con la captura y
+  // con la app: de ahí sale «En propia», que no se duplica en `directos`.
+  const tp = useTranslations('partido_directo');
   const [detail, setDetail] = useState<MatchDetail>(initial);
 
   const isLive = detail.status === 'live';
@@ -220,7 +223,12 @@ export function DirectoDetailClient({ initial }: Props) {
                     </span>
                     <span className="font-medium">{t(`event.${e.type}`)}</span>
                     <span className="truncate text-muted-foreground">
-                      {e.side === 'rival' ? `${t('event.rival')} ${e.label}` : e.label}
+                      {/* El AUTOGOL lleva el nombre del autor, no «Rival #dorsal». */}
+                      {e.ownGoal
+                        ? `${tp('own_goal')} · ${e.label}`
+                        : e.side === 'rival'
+                          ? `${t('event.rival')} ${e.label}`
+                          : e.label}
                     </span>
                   </li>
                 );

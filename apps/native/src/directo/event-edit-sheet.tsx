@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
+import { canBeOwnGoal } from '@misterfc/core';
 import type { EventEditAvailability, EventEditError, LineupRosterPlayer } from '@misterfc/core';
 import { useTranslations } from '@/locale/provider';
 import { ActorGrid, rosterChip } from './quick-entry';
@@ -152,7 +153,8 @@ export function EventEditSheet({
             </View>
           </View>
 
-          {/* ── Actor: jugador propio, o dorsal si el evento es del rival ── */}
+          {/* ── Actor: jugador propio; dorsal si el evento es del rival, y además
+                 jugador NUESTRO si ese evento del rival es un gol (autogol) ── */}
           {evento.side === 'own' ? (
             // La MISMA rejilla de la entrada rápida (`ActorGrid` + `rosterChip`): el
             // entrenador elige jugador igual que cuando lo apunta.
@@ -190,6 +192,21 @@ export function EventEditSheet({
                   </Text>
                 </Pressable>
               </View>
+
+              {/* AUTOGOL: un GOL del rival también puede haberlo marcado uno de los
+                  nuestros. Las dos opciones conviven porque la corrección va en los
+                  dos sentidos —era de ellos y es nuestro, o al revés— y core apaga
+                  el actor que sale (`actorPatchFor`): la fila nunca acaba con dos. */}
+              {canBeOwnGoal(evento) ? (
+                <ActorGrid
+                  title={t('partido_directo.own_goal')}
+                  players={roster.map((r) => rosterChip(r, t))}
+                  onPick={(playerId) => onActor({ playerId })}
+                  accent={accent}
+                  empty={t('directo_entry.no_field_players')}
+                  disabled={!puede}
+                />
+              ) : null}
             </View>
           )}
 

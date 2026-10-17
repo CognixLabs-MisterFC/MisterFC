@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   isMatchGoal,
   isOwnGoal,
+  canBeOwnGoal,
   computeScore,
   computeShootout,
   isPenaltyOutcome,
@@ -42,6 +43,32 @@ describe('isOwnGoal — el autogol se reconoce por la FORMA de la fila', () => {
   it('solo el GOL: la tarjeta o el penalti del rival nunca', () => {
     expect(isOwnGoal({ side: 'rival', type: 'yellow_card', playerId: AUTOR })).toBe(false);
     expect(isOwnGoal({ side: 'rival', type: 'penalty', playerId: AUTOR })).toBe(false);
+  });
+});
+
+describe('canBeOwnGoal — qué fila ADMITE autor nuestro (la pregunta de la pantalla)', () => {
+  const AUTOR = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
+
+  it('solo el gol del rival', () => {
+    expect(canBeOwnGoal({ side: 'rival', type: 'goal' })).toBe(true);
+    expect(canBeOwnGoal({ side: 'rival', type: 'penalty' })).toBe(false);
+    expect(canBeOwnGoal({ side: 'rival', type: 'yellow_card' })).toBe(false);
+    expect(canBeOwnGoal({ side: 'own', type: 'goal' })).toBe(false);
+  });
+
+  // Las dos preguntas son distintas —«¿puede llevar autor?» y «¿lo lleva?»— y por eso
+  // son dos funciones; lo que NO puede pasar es que se separen. Esto fija la relación:
+  // una fila es autogol exactamente cuando lo admite Y trae jugador.
+  it('isOwnGoal = canBeOwnGoal + jugador, en los cuatro cruces', () => {
+    for (const side of ['own', 'rival']) {
+      for (const type of ['goal', 'penalty']) {
+        for (const playerId of [AUTOR, null]) {
+          expect(isOwnGoal({ side, type, playerId })).toBe(
+            canBeOwnGoal({ side, type }) && !!playerId,
+          );
+        }
+      }
+    }
   });
 });
 

@@ -764,6 +764,7 @@ export function LiveCaptureClient({
       id,
       type,
       dorsal: dorsalNum,
+      ownGoalLabel: null, // esta vía es la del dorsal; el autogol se da de alta en la línea de tiempo
       note,
       clockSeconds,
       displayMinute,
@@ -871,6 +872,7 @@ export function LiveCaptureClient({
         id,
         type: 'penalty',
         dorsal: pp.dorsal,
+        ownGoalLabel: null, // un penalti del rival lo tira el rival: nunca es autogol
         note: null,
         clockSeconds,
         displayMinute,
@@ -1720,8 +1722,17 @@ export function LiveCaptureClient({
                       aria-hidden
                     />
                     <span className="min-w-0 flex-1 truncate">
-                      {ev.dorsal != null && (
-                        <span className="font-mono tabular-nums">#{ev.dorsal}</span>
+                      {/* AUTOGOL: el gol es del rival (por eso está en este panel) pero
+                          lo marcó uno NUESTRO, así que va con su nombre. Sin esto se
+                          vería una fila con un `#` sin número. */}
+                      {ev.ownGoalLabel ? (
+                        <span className="font-medium">
+                          {t('own_goal')} · {ev.ownGoalLabel}
+                        </span>
+                      ) : (
+                        ev.dorsal != null && (
+                          <span className="font-mono tabular-nums">#{ev.dorsal}</span>
+                        )
                       )}
                       {ev.type === 'penalty' && ev.outcome ? (
                         <span className="text-muted-foreground">

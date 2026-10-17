@@ -276,7 +276,12 @@ function EventsCard({ detail }: { detail: MatchDetail }) {
               <Text className="w-8 text-right text-sm text-zinc-400 tabular-nums">{`${min}'`}</Text>
               <Text className="text-sm font-medium text-[#0F1B2E]">{t(`directo.event.${e.type}`)}</Text>
               <Text className="flex-1 text-sm text-zinc-500" numberOfLines={1}>
-                {e.side === 'rival' ? `${t('directos.event.rival')} ${e.label}` : e.label}
+                {/* El AUTOGOL lleva el nombre del autor, no «Rival #dorsal». */}
+                {e.ownGoal
+                  ? `${t('partido_directo.own_goal')} · ${e.label}`
+                  : e.side === 'rival'
+                    ? `${t('directos.event.rival')} ${e.label}`
+                    : e.label}
               </Text>
             </View>
           );

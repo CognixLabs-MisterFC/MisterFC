@@ -5,6 +5,7 @@ import {
   FOUL_KINDS,
   PENALTY_OUTCOMES,
   TIMELINE_ADD_TYPES,
+  canBeOwnGoal,
   type LineupRosterPlayer,
 } from '@misterfc/core';
 import { useTranslations } from '@/locale/provider';
@@ -31,14 +32,17 @@ import { ActorGrid, rosterChip } from './quick-entry';
  *   · la asistencia es siempre propia;
  *   · córner, fuera de juego y tiro propios van por ubicación → sin jugador;
  *   · la sustitución pide los DOS jugadores (sale y entra);
- *   · penalti pide resultado, falta pide tipo, córner pide lado.
+ *   · penalti pide resultado, falta pide tipo, córner pide lado;
+ *   · el GOL del rival ofrece «en propia»: entonces pide JUGADOR nuestro en vez de
+ *     dorsal, y la fila sigue siendo del rival (el autogol cuenta en su marcador).
  *
  * Los DOCE tipos de la tabla menos dos: el cambio de formación no es un evento con
  * actor y la tanda tiene su propia secuencia. Los dos quedan fuera a propósito, como
  * en web (`TIMELINE_ADD_TYPES`).
  *
- * Cadenas: TODAS existían ya en el catálogo compartido (`partido_directo.*`), que la
- * app importa entero y hasta hoy no usaba. Cero cadenas nuevas.
+ * Cadenas: del catálogo compartido (`partido_directo.*`), que la app importa entero.
+ * La única nueva en toda la pieza del autogol es `partido_directo.own_goal`, que
+ * comparten esta casilla, la entrada rápida y la web.
  */
 export type AddEventInput = {
   side: 'own' | 'rival';
@@ -76,14 +80,20 @@ export function EventForm({
   const [outcome, setOutcome] = useState<string>('scored');
   const [foulKind, setFoulKind] = useState<string>('committed');
   const [cornerSide, setCornerSide] = useState<string>('for');
+  const [enPropia, setEnPropia] = useState(false);
 
   const esSub = type === 'substitution';
   const deEquipo = type === 'foul' || type === 'corner';
   const bandoOculto = deEquipo || esSub || type === 'assist';
   const bando: 'own' | 'rival' = bandoOculto ? 'own' : side;
   const porUbicacion = type === 'offside' || type === 'shot' || type === 'corner';
-  const pideJugador = bando === 'own' && !porUbicacion;
-  const pideDorsal = bando === 'rival';
+  // AUTOGOL: un gol del rival marcado por los nuestros. Cambia QUIÉN se pide —
+  // jugador en vez de dorsal—, no el bando: la fila sigue siendo del rival, que es
+  // lo que hace que cuente en su marcador sin que nada más tenga que enterarse.
+  const cabeAutogol = canBeOwnGoal({ side: bando, type });
+  const esAutogol = cabeAutogol && enPropia;
+  const pideJugador = (bando === 'own' && !porUbicacion) || esAutogol;
+  const pideDorsal = bando === 'rival' && !esAutogol;
 
   const listo =
     (!pideJugador || playerId != null) &&
@@ -109,6 +119,10 @@ export function EventForm({
     setPlayerId(null);
     setPlayerInId(null);
     setDorsal('');
+    // «En propia» SÍ se apaga, al revés que el resto de opciones del tipo. Dos
+    // autogoles seguidos no existen; una casilla olvidada encendida convertiría el
+    // siguiente gol del rival en un autogol de uno de nuestros críos.
+    setEnPropia(false);
   };
 
   const chip = (activo: boolean) => ({
@@ -165,6 +179,21 @@ export function EventForm({
           </View>
         </View>
       )}
+
+      {/* ── En propia, solo cuando cabe (gol del rival) ── */}
+      {cabeAutogol ? (
+        <Pressable
+          disabled={disabled}
+          onPress={() => setEnPropia((v) => !v)}
+          className="self-start rounded-xl px-3 py-2 active:opacity-70"
+          style={chip(enPropia)}
+        >
+          <Text className="text-sm text-[#0F1B2E]">
+            {enPropia ? '✓ ' : ''}
+            {t('partido_directo.own_goal')}
+          </Text>
+        </Pressable>
+      ) : null}
 
       {/* ── Minuto ── */}
       <View style={{ gap: 6 }}>

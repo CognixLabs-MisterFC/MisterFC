@@ -93,6 +93,7 @@ export {
   isShootoutOutcome,
   isMatchGoal,
   isOwnGoal,
+  canBeOwnGoal,
   computeScore,
   computeShootout,
 } from './score';
