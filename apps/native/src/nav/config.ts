@@ -279,6 +279,10 @@ const STAFF_HIDDEN: MenuDef[] = [
   { name: 'sesion-del-dia', labelKey: 'nav.sesion_del_dia' },
   // O2-7b-1 — detalle de convocatoria (?eventId), alcanzado desde la lista.
   { name: 'convocatoria', labelKey: 'nav.convocatorias' },
+  // Carga manual del acta (?eventId): meter el partido entero de corrido al acabar.
+  // Se alcanza desde el directo cuando el partido NO está en juego; href:null para
+  // que no salga como pestaña.
+  { name: 'carga-acta', labelKey: 'nav.directo' },
   // O2-10b-1a — hilo 1:1 (?conversationId), de equipo (?teamConversationId) y
   // "nueva conversación" (el staff SÍ inicia). Alcanzados por navegación.
   { name: 'mensaje', labelKey: 'nav.mensajes' },
@@ -395,9 +399,7 @@ export function menuForArea(area: ChromeArea, role: Role | null): MenuDef[] {
  * alcanzado por navegación desde el listado. href:null (no sale en la barra ni en
  * menú; el seguidor no tiene menú hamburguesa).
  */
-const SPECTATOR_HIDDEN: MenuDef[] = [
-  { name: 'directo', labelKey: 'nav.directo' },
-];
+const SPECTATOR_HIDDEN: MenuDef[] = [{ name: 'directo', labelKey: 'nav.directo' }];
 
 export function allMenuFiles(area: ChromeArea): MenuDef[] {
   const files =

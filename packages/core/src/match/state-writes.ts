@@ -23,6 +23,7 @@ import { isManageableMatchType } from '../events/types';
 import {
   adjustClockPatch,
   asPeriodCount,
+  reconstructedPeriods,
   buildNextPeriod,
   type ClockMutation,
   type ClockPeriod,
@@ -60,15 +61,10 @@ export type ClockWriteError =
   | 'regulation_incomplete'
   | 'generic';
 
-export type ClockWriteOutcome =
-  | { ok: true }
-  | { ok: false; error: ClockWriteError };
+export type ClockWriteOutcome = { ok: true } | { ok: false; error: ClockWriteError };
 
 /** Réplica de `mapPgErr` de la web (42501 → forbidden). */
-function mapClockPgErr(
-  message: string | undefined,
-  code: string | undefined,
-): ClockWriteError {
+function mapClockPgErr(message: string | undefined, code: string | undefined): ClockWriteError {
   if (code === '42501') return 'forbidden';
   if (!message) return 'generic';
   if (message.includes('event_not_match')) return 'invalid';
@@ -259,10 +255,7 @@ export async function startMatchFromClient(
       started_at?: string;
     } = { status: 'live', operator_profile_id: user.id, lock_heartbeat_at: iso };
     if (status === 'not_started') patch.started_at = iso;
-    const { error } = await supabase
-      .from('match_state')
-      .update(patch)
-      .eq('event_id', event_id);
+    const { error } = await supabase.from('match_state').update(patch).eq('event_id', event_id);
     if (error) return { ok: false, error: mapClockPgErr(error.message, error.code) };
   }
 
@@ -291,6 +284,159 @@ export async function startMatchFromClient(
       if (error) return { ok: false, error: mapClockPgErr(error.message, error.code) };
     }
   }
+
+  return { ok: true };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// prepareMatchSheet — RECONSTRUIR el acta de un partido que nunca se abrió en el
+// directo. Es la puerta de la carga manual: el entrenador estaba solo con el equipo,
+// no pudo apuntar nada, y lo mete todo después.
+//
+// SIN ESTO NO HAY NADA QUE HACER. Un alta por minuto deriva `clock_seconds` y
+// `period` del reloj (`clockFieldsForMinute`); un partido que nunca se abrió no tiene
+// periodos, así que el alta muere con `no_period`. Esto es lo que los crea.
+//
+// Qué hace, en orden:
+//   1. Congela el once desde la ALINEACIÓN OFICIAL — la misma fuente que startMatch.
+//      Sin alineación oficial → `no_official_lineup`: no se inventa un once, y de ese
+//      once salen los minutos jugados de todo el partido.
+//   2. Siembra los periodos REGULARES DE LA CATEGORÍA (`reconstructedPeriods`): dos
+//      partes, o tres tiempos en querubín. Todos terminados y con su duración, así el
+//      reloj total es `count·duración` y cada minuto cae en su periodo.
+//   3. Deja `match_state` en 'closed' — el acta está reconstruida, no en juego — con
+//      el entrenador como operador.
+//   4. Consolida ya, aunque todavía no haya un solo evento: así el once reconstruido
+//      enseña sus minutos completos desde el principio.
+//
+// IDEMPOTENTE, y hace falta que lo sea: si ya está 'live' o 'closed' no toca nada, y
+// cada paso comprueba antes si ya está hecho. Esto NO es una transacción —son
+// llamadas sueltas de PostgREST— así que un fallo a mitad deja el partido todavía en
+// `not_started`, que es justo lo que hace que el siguiente intento lo retome. Por el
+// mismo motivo el gate del once va ANTES de escribir nada: es la lección que dejó
+// `startMatchFromClient`, donde comprobarlo después abría una ventana con el partido
+// en `live` sin once ni periodos, saliendo en la lista de directos de las familias.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Duración de un periodo y CUÁNTOS hay: las dos columnas del reloj, en una lectura. */
+async function loadClockShape(
+  supabase: DbClient,
+  eventId: string,
+): Promise<{ halfSeconds: number; periodCount: PeriodCount }> {
+  const { data } = await supabase
+    .from('events')
+    .select('teams!inner(categories!inner(half_duration_minutes, period_count))')
+    .eq('id', eventId)
+    .maybeSingle();
+  type Shape = {
+    teams: { categories: { half_duration_minutes: number | null; period_count: number | null } };
+  } | null;
+  const fila = data as unknown as Shape;
+  const minutos = fila?.teams?.categories?.half_duration_minutes;
+  return {
+    halfSeconds: (minutos && minutos > 0 ? minutos : 45) * 60,
+    periodCount: asPeriodCount(fila?.teams?.categories?.period_count),
+  };
+}
+
+export async function prepareMatchSheetFromClient(
+  supabase: DbClient,
+  input: unknown,
+): Promise<ClockWriteOutcome> {
+  const parsed = matchEventRefSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: 'invalid' };
+  const { event_id } = parsed.data;
+
+  const user = await getCurrentUserFromClient(supabase);
+  if (!user) return { ok: false, error: 'forbidden' };
+
+  const { data: ev } = await supabase
+    .from('events')
+    .select('id, club_id, team_id, type')
+    .eq('id', event_id)
+    .maybeSingle();
+  if (!ev) return { ok: false, error: 'not_found' };
+  if (!isManageableMatchType(ev.type as string)) return { ok: false, error: 'invalid' };
+  if (ev.team_id == null) return { ok: false, error: 'invalid' };
+  const clubId = ev.club_id as string;
+
+  // Ya tiene reloj (se abrió en directo o ya se reconstruyó) → nada que preparar.
+  const status = await loadStatus(supabase, event_id);
+  if (status === 'live' || status === 'closed') return { ok: true };
+
+  // 1. El once, y su gate ANTES de escribir.
+  const { data: existingStarters } = await supabase
+    .from('match_starters')
+    .select('player_id')
+    .eq('event_id', event_id)
+    .limit(1);
+  if ((existingStarters ?? []).length === 0) {
+    const { data: official } = await supabase
+      .from('lineups')
+      .select('id')
+      .eq('event_id', event_id)
+      .eq('is_official', true)
+      .maybeSingle();
+    if (!official) return { ok: false, error: 'no_official_lineup' };
+
+    const { data: positions } = await supabase
+      .from('lineup_positions')
+      .select('player_id, position_code')
+      .eq('lineup_id', official.id as string)
+      .eq('location', 'field');
+    const starters = (positions ?? []).map((p) => ({
+      event_id,
+      player_id: p.player_id as string,
+      position_code: (p.position_code as string | null) ?? null,
+    }));
+    if (starters.length === 0) return { ok: false, error: 'no_official_lineup' };
+    const { error } = await supabase.from('match_starters').insert(starters);
+    if (error) return { ok: false, error: mapClockPgErr(error.message, error.code) };
+  }
+
+  // 2. Los periodos de la categoría.
+  const existingPeriods = await loadPeriods(supabase, event_id);
+  if (existingPeriods.length === 0) {
+    const { halfSeconds, periodCount } = await loadClockShape(supabase, event_id);
+    const { error } = await supabase.from('match_periods').insert(
+      reconstructedPeriods(periodCount, halfSeconds).map((p) => ({
+        event_id,
+        period: p.period,
+        ordinal: p.ordinal,
+        base_offset_seconds: p.baseOffsetSeconds,
+        accumulated_seconds: p.accumulatedSeconds,
+        running: p.running,
+        last_started_at: p.lastStartedAt,
+        ended: p.ended,
+      })),
+    );
+    if (error) return { ok: false, error: mapClockPgErr(error.message, error.code) };
+  }
+
+  // 3. La cabecera, en 'closed'.
+  const { iso } = now();
+  const cabecera = {
+    status: 'closed' as const,
+    started_at: iso,
+    closed_at: iso,
+    closed_by: user.id,
+    operator_profile_id: user.id,
+    lock_heartbeat_at: iso,
+  };
+  if (status == null) {
+    const { error } = await supabase
+      .from('match_state')
+      // `club_id` lo deriva el trigger; va por el NOT NULL.
+      .insert({ event_id, club_id: clubId, ...cabecera });
+    if (error) return { ok: false, error: mapClockPgErr(error.message, error.code) };
+  } else {
+    const { error } = await supabase.from('match_state').update(cabecera).eq('event_id', event_id);
+    if (error) return { ok: false, error: mapClockPgErr(error.message, error.code) };
+  }
+
+  // 4. Consolidar ya: el once reconstruido enseña sus minutos desde el principio.
+  const consErr = await consolidateMatchAndPersistFromClient(supabase, event_id, user.id);
+  if (consErr) return { ok: false, error: consErr };
 
   return { ok: true };
 }

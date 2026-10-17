@@ -21,12 +21,10 @@ import { revalidatePath } from 'next/cache';
 import {
   addMatchEventFromClient,
   addTimelineEventSchema,
-  asPeriodCount,
   assignPlayersToFormation,
   canRegisterSubstitution,
   changeFormationSchema,
   type ClockPeriod,
-  consolidateMatchAndPersistFromClient,
   createSupabaseServerClient,
   startMatchFromClient,
   pauseClockFromClient,
@@ -35,9 +33,8 @@ import {
   startNextPeriodFromClient,
   adjustClockFromClient,
   finishMatchFromClient,
+  prepareMatchSheetFromClient,
   reopenMatchFromClient,
-  type PeriodCount,
-  reconstructedPeriods,
   deleteMatchEventFromClient,
   updateMatchEventActorFromClient,
   updateMatchEventMinuteFromClient,
@@ -49,7 +46,6 @@ import {
   type FieldSlot,
   formationsForFormat,
   getFormation,
-  isManageableMatchType,
   type Json,
   type LivePositions,
   matchEventRefSchema,
@@ -106,15 +102,6 @@ export type ClockActionState = {
   error?: ActionError;
   success?: boolean;
 };
-
-function mapPgErr(message: string | undefined, code: string | undefined): ActionError {
-  if (code === '42501') return 'forbidden';
-  if (!message) return 'generic';
-  if (message.includes('event_not_match')) return 'invalid';
-  if (message.includes('event_without_team')) return 'invalid';
-  if (message.includes('player_not_in_team_at_event')) return 'invalid';
-  return 'generic';
-}
 
 function revalidate(eventId: string) {
   revalidatePath(`/[locale]/(authenticated)/convocatorias/${eventId}/directo`, 'page');
@@ -209,133 +196,14 @@ export async function startMatch(input: unknown): Promise<ClockActionState> {
 export async function prepareMatchSheet(input: unknown): Promise<ClockActionState> {
   const parsed = matchEventRefSchema.safeParse(input);
   if (!parsed.success) return { error: 'invalid' };
-  const { event_id } = parsed.data;
 
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: 'forbidden' };
 
-  const { data: ev } = await supabase
-    .from('events')
-    .select('id, club_id, team_id, type')
-    .eq('id', event_id)
-    .maybeSingle();
-  if (!ev) return { error: 'not_found' };
-  if (!isManageableMatchType(ev.type as string)) return { error: 'invalid' };
-  if (ev.team_id == null) return { error: 'invalid' };
-  const clubId = ev.club_id as string;
-  const teamId = ev.team_id as string;
+  const r = await prepareMatchSheetFromClient(supabase, parsed.data);
+  if (!r.ok) return { error: r.error as ActionError };
 
-  // Ya tiene reloj (se abrió en directo o ya se reconstruyó) → nada que preparar.
-  const status = await loadStatus(supabase, event_id);
-  if (status === 'live' || status === 'closed') return { success: true };
-
-  // 1. Congelar el once desde la alineación oficial (fuente del cálculo de minutos).
-  const { data: existingStarters } = await supabase
-    .from('match_starters')
-    .select('player_id')
-    .eq('event_id', event_id)
-    .limit(1);
-  if ((existingStarters ?? []).length === 0) {
-    const { data: official } = await supabase
-      .from('lineups')
-      .select('id')
-      .eq('event_id', event_id)
-      .eq('is_official', true)
-      .maybeSingle();
-    if (!official) return { error: 'no_official_lineup' };
-
-    const { data: positions } = await supabase
-      .from('lineup_positions')
-      .select('player_id, position_code')
-      .eq('lineup_id', official.id as string)
-      .eq('location', 'field');
-    const starters = (positions ?? []).map((p) => ({
-      event_id,
-      player_id: p.player_id as string,
-      position_code: (p.position_code as string | null) ?? null,
-    }));
-    if (starters.length === 0) return { error: 'no_official_lineup' };
-    const { error } = await supabase.from('match_starters').insert(starters);
-    if (error) return { error: mapPgErr(error.message, error.code) };
-  }
-
-  // 2. Sembrar los periodos regulares DE LA CATEGORÍA (duración y cuántos).
-  const { data: team } = await supabase
-    .from('teams')
-    .select('category_id')
-    .eq('id', teamId)
-    .maybeSingle();
-  let halfMinutes = 45;
-  let periodCount: PeriodCount = 2;
-  if (team?.category_id) {
-    const { data: cat } = await supabase
-      .from('categories')
-      .select('half_duration_minutes, period_count')
-      .eq('id', team.category_id as string)
-      .maybeSingle();
-    const hm = cat?.half_duration_minutes as number | undefined;
-    if (hm && hm > 0) halfMinutes = hm;
-    // Las dos columnas del reloj viajan juntas: cuánto dura un periodo y CUÁNTOS hay.
-    periodCount = asPeriodCount(cat?.period_count as number | null | undefined);
-  }
-  const halfSeconds = halfMinutes * 60;
-
-  const existingPeriods = await loadPeriods(supabase, event_id);
-  if (existingPeriods.length === 0) {
-    const { error } = await supabase.from('match_periods').insert(
-      reconstructedPeriods(periodCount, halfSeconds).map((p) => ({
-        event_id,
-        period: p.period,
-        ordinal: p.ordinal,
-        base_offset_seconds: p.baseOffsetSeconds,
-        accumulated_seconds: p.accumulatedSeconds,
-        running: p.running,
-        last_started_at: p.lastStartedAt,
-        ended: p.ended,
-      })),
-    );
-    if (error) return { error: mapPgErr(error.message, error.code) };
-  }
-
-  // 3. Cabecera de sesión en 'closed' (acta reconstruida).
-  const { iso } = now();
-  if (status == null) {
-    const { error } = await supabase.from('match_state').insert({
-      event_id,
-      club_id: clubId, // el trigger lo deriva; lo pasamos por el NOT NULL.
-      status: 'closed',
-      started_at: iso,
-      closed_at: iso,
-      closed_by: user.id,
-      operator_profile_id: user.id,
-      lock_heartbeat_at: iso,
-    });
-    if (error) return { error: mapPgErr(error.message, error.code) };
-  } else {
-    const { error } = await supabase
-      .from('match_state')
-      .update({
-        status: 'closed',
-        started_at: iso,
-        closed_at: iso,
-        closed_by: user.id,
-        operator_profile_id: user.id,
-        lock_heartbeat_at: iso,
-      })
-      .eq('event_id', event_id);
-    if (error) return { error: mapPgErr(error.message, error.code) };
-  }
-
-  // Consolidar ya (aunque aún no haya eventos): así el once reconstruido muestra sus
-  // minutos completos desde el principio. Cada evento posterior reconsolida solo.
-  const consErr = await consolidateAndPersist(supabase, event_id, user.id);
-  if (consErr) return { error: consErr };
-
-  revalidate(event_id);
+  revalidate(parsed.data.event_id);
   return { success: true };
 }
 
@@ -410,16 +278,10 @@ export async function startNextPeriod(input: unknown): Promise<ClockActionState>
 // match_periods → robusto y repetible.
 // ─────────────────────────────────────────────────────────────────────────────
 
-// O2-9a — DELEGA en core (`consolidateMatchAndPersistFromClient`): misma lógica de
-// materialización (match_player_stats + marcador) que ahora comparte la app nativa.
-// La usan finishMatch (vía core), prepareMatchSheet y reconsolidateIfClosed.
-async function consolidateAndPersist(
-  supabase: Supa,
-  eventId: string,
-  closedBy: string,
-): Promise<ActionError | null> {
-  return consolidateMatchAndPersistFromClient(supabase, eventId, closedBy);
-}
+// O2-9a — la materialización (match_player_stats + marcador) vive en core
+// (`consolidateMatchAndPersistFromClient`) y la comparten las dos apps. Este fichero
+// ya no la envuelve: las escrituras que la necesitan —finalizar, reconstruir el acta
+// y las cuatro operaciones del acta— la llaman desde allí.
 
 // F14H — la RECONSOLIDACIÓN automática al editar el acta de un partido ya cerrado
 // vivía aquí y ahora está en core (`reconsolidateIfClosed`, privada de
