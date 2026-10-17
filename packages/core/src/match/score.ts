@@ -58,6 +58,28 @@ export function isMatchGoal(ev: { type: string; outcome?: string | null }): bool
   return false;
 }
 
+/**
+ * ¿Esta fila es un AUTOGOL? Un gol del RIVAL marcado por un jugador NUESTRO.
+ *
+ * No hay un `type = 'own_goal'`, y no es un olvido: el marcador no va por el tipo,
+ * va por `side` — `computeScore` suma cada gol al bando de su fila. Un autogol ES un
+ * gol del rival; lo único que lo distingue es quién lo marcó. Por eso se reconoce por
+ * la forma de la fila (rival + gol + jugador nuestro) y no por una marca aparte en
+ * `metadata`, que podría contradecir a la columna. El CHECK `match_events_actor_by_side`
+ * (mig 20261128000000) deja esa forma SOLO para `goal`, y con `rival_dorsal` en null:
+ * una fila no declara dos autores.
+ *
+ * Es la regla única que comparten la etiqueta del acta, el alta manual y la edición
+ * del actor, para que no diverjan.
+ */
+export function isOwnGoal(ev: {
+  side: string;
+  type: string;
+  playerId?: string | null;
+}): boolean {
+  return ev.side === 'rival' && ev.type === 'goal' && !!ev.playerId;
+}
+
 export interface MatchScore {
   own: number;
   rival: number;
