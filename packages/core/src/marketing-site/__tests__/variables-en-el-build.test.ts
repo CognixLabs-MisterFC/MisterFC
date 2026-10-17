@@ -16,7 +16,7 @@ import { isMarketingSiteOn, MARKETING_SITE_ENV_KEYS } from '../index';
  */
 const turbo = JSON.parse(
   readFileSync(fileURLToPath(new URL('../../../../../turbo.json', import.meta.url)), 'utf8'),
-) as { tasks: Record<string, { env?: string[] }> };
+) as { tasks: Record<string, { env?: string[]; passThroughEnv?: string[] }> };
 
 /** Las claves que lee `isMarketingSiteOn`, recorriendo sus tres ramas. */
 function clavesLeidas(): Set<string> {
@@ -54,4 +54,37 @@ describe('las variables de la web comercial llegan al build', () => {
       expect(turbo.tasks.build?.env ?? []).toContain(key);
     },
   );
+});
+
+/**
+ * Lo mismo para `apps/web/next.config.ts`, que se evalúa al compilar: `withSentryConfig`
+ * lee ahí `SENTRY_ORG`, `SENTRY_PROJECT` y `SENTRY_AUTH_TOKEN` para subir los source
+ * maps. Sin declararlas, Turborepo no se las pasaba y los errores de Sentry salían con
+ * el código minificado (aviso del build de producción, 18-10-2026).
+ *
+ * Valen `env` o `passThroughEnv`: los secretos van en `passThroughEnv`, que llega al
+ * build sin entrar en el hash de la caché. Quedan fuera las que no hace falta declarar:
+ * `NEXT_PUBLIC_*` (Turborepo las infiere para Next.js), `NODE_ENV` (la pone Next) y `CI`,
+ * que solo decide si el plugin de Sentry escribe en el log.
+ */
+const nextConfig = readFileSync(
+  fileURLToPath(new URL('../../../../../apps/web/next.config.ts', import.meta.url)),
+  'utf8',
+);
+const NO_HACE_FALTA = new Set(['NODE_ENV', 'CI']);
+const leidasEnNextConfig = [
+  ...new Set([...nextConfig.matchAll(/process\.env\.([A-Z0-9_]+)/g)].map((m) => m[1] as string)),
+].filter((k) => !k.startsWith('NEXT_PUBLIC_') && !NO_HACE_FALTA.has(k));
+
+describe('las variables que lee next.config.ts llegan al build', () => {
+  it('premisa: next.config.ts lee las de Sentry', () => {
+    expect(leidasEnNextConfig).toEqual(
+      expect.arrayContaining(['SENTRY_AUTH_TOKEN', 'SENTRY_ORG', 'SENTRY_PROJECT']),
+    );
+  });
+
+  it.each(leidasEnNextConfig)('%s está declarada en la tarea build de turbo.json', (key) => {
+    const build = turbo.tasks.build;
+    expect([...(build?.env ?? []), ...(build?.passThroughEnv ?? [])]).toContain(key);
+  });
 });
