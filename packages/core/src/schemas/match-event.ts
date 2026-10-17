@@ -12,7 +12,7 @@ import {
   PLAYER_FIELD_EVENT_TYPES,
   RIVAL_EVENT_TYPES,
 } from '../match/event';
-import { PENALTY_OUTCOMES, SHOOTOUT_OUTCOMES } from '../match/score';
+import { PENALTY_OUTCOMES, SHOOTOUT_OUTCOMES, isOwnGoal } from '../match/score';
 import { FOUL_KINDS, CORNER_SIDES } from '../match/team-events';
 
 const uuid = z.string().uuid({ message: 'invalid_id' });
@@ -275,7 +275,9 @@ export type UpdateEventActorInput = z.infer<typeof updateEventActorSchema>;
  * actor claro + faltas/córners; las sustituciones, cambios de formación y la
  * tanda tienen su propia UI y NO se dan de alta aquí). Reglas por tipo:
  *   - goal/assist/yellow_card/red_card: propio → `player_id`; rival → `rival_dorsal`.
- *     (`assist` solo propio.)
+ *     (`assist` solo propio.) EXCEPCIÓN, el AUTOGOL: un `goal` del rival puede llevar
+ *     `player_id` NUESTRO en vez de dorsal — es un gol del rival marcado por los
+ *     nuestros. Nunca los dos a la vez.
  *   - penalty: propio → `player_id`; rival → `rival_dorsal`; requiere `outcome`.
  *   - foul: SIEMPRE propio; requiere `player_id` + `foul_kind`; coords opcionales.
  *   - corner: SIEMPRE propio; requiere `corner_side`.
@@ -368,6 +370,13 @@ export const addTimelineEventSchema = z
         ctx.addIssue({ code: 'custom', message: 'sub_same_player', path: ['related_player_id'] });
       return;
     }
+    // AUTOGOL (mig 20261128000000): el único evento del rival que lleva jugador
+    // NUESTRO. La regla NO se copia aquí — una copia es dos reglas que se separan el
+    // día que una cambie, y una mutación lo midió: tocar `isOwnGoal` dejaba esta
+    // puerta intacta. Se pide prestada la de core, que es la misma que usan la
+    // etiqueta del acta, la cola del directo y la edición del actor.
+    const esAutogol = isOwnGoal({ side: v.side, type: v.type, playerId: v.player_id });
+
     // Actor coherente con el bando para los tipos con actor.
     const needsActor =
       ownActor.includes(v.type) || v.type === 'penalty' || v.type === 'offside' || v.type === 'shot';
@@ -377,6 +386,12 @@ export const addTimelineEventSchema = z
         const fieldByLocation = v.type === 'offside' || v.type === 'shot';
         if (!fieldByLocation && !v.player_id)
           ctx.addIssue({ code: 'custom', message: 'player_required', path: ['player_id'] });
+      } else if (esAutogol) {
+        // AUTOGOL: gol del rival marcado por un jugador NUESTRO. Lleva jugador EN VEZ
+        // de dorsal, nunca los dos — el CHECK `match_events_actor_by_side` exige
+        // `rival_dorsal` null, y una fila no declara dos autores.
+        if (v.rival_dorsal)
+          ctx.addIssue({ code: 'custom', message: 'own_goal_no_dorsal', path: ['rival_dorsal'] });
       } else if (!v.rival_dorsal) {
         ctx.addIssue({ code: 'custom', message: 'dorsal_required', path: ['rival_dorsal'] });
       }

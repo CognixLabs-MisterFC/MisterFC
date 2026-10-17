@@ -36,6 +36,7 @@ import {
   updateEventMinuteSchema,
 } from '../schemas/match-event';
 import { clockFieldsForMinute } from './timeline';
+import { isOwnGoal } from './score';
 import type { ClockPeriod, PeriodKind } from './clock';
 import { consolidateMatchAndPersistFromClient } from './state-writes';
 
@@ -167,9 +168,9 @@ export function eventEditAvailability(state: {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export type ActorPatch = {
-  player_id?: string;
+  player_id?: string | null;
   related_player_id?: string;
-  rival_dorsal?: number;
+  rival_dorsal?: number | null;
 };
 
 /**
@@ -180,7 +181,12 @@ export type ActorPatch = {
  *  · side='own'  → `player_id`. Y `related_player_id` SOLO en sustituciones, porque
  *    el CHECK `related_only_sub` lo prohíbe en cualquier otro tipo.
  *  · side='rival' → `rival_dorsal`. Un evento del rival no tiene jugador nuestro:
- *    el CHECK `actor_by_side` lo impide.
+ *    el CHECK `actor_by_side` lo impide. Con UNA excepción, el AUTOGOL (mig
+ *    20261128000000): un `goal` del rival SÍ puede llevar jugador nuestro. Por eso un
+ *    gol del rival acepta las dos cosas, y el parche apaga la otra — poner jugador
+ *    borra el dorsal y poner dorsal borra el jugador. No es adorno: el CHECK exige que
+ *    solo haya UN actor, así que un parche que pusiera el jugador dejando el dorsal
+ *    sería rechazado por la base y llegaría a la pantalla como un error genérico.
  *
  * Devuelve un parche VACÍO cuando nada de lo pedido encaja con la fila, y el llamante
  * lo traduce a `invalid`. Lo que NO hace es colar el campo equivocado y dejar que la
@@ -195,6 +201,21 @@ export function actorPatchFor(
     if (input.player_id) patch.player_id = input.player_id;
     if (row.type === 'substitution' && input.related_player_id) {
       patch.related_player_id = input.related_player_id;
+    }
+  } else if (row.type === 'goal') {
+    // Gol del rival: o lo marcó uno de ellos (dorsal) o lo marcamos nosotros
+    // (autogol). Se puede pasar de un caso al otro, y el actor que sale se apaga.
+    //
+    // Si llegan los DOS —que es un fallo del llamante, ninguna pantalla los manda
+    // juntos— manda el dorsal. Es lo que hacía esta función antes del autogol, y es
+    // la lectura menos dañina de las dos: convertir sin querer un gol del rival en
+    // un autogol le cuelga a un crío un gol en propia puerta.
+    if (input.rival_dorsal != null) {
+      patch.rival_dorsal = input.rival_dorsal;
+      patch.player_id = null;
+    } else if (input.player_id) {
+      patch.player_id = input.player_id;
+      patch.rival_dorsal = null;
     }
   } else if (input.rival_dorsal != null) {
     patch.rival_dorsal = input.rival_dorsal;
@@ -348,6 +369,9 @@ export async function updateMatchEventActorFromClient(
  *  · Las COORDENADAS solo en falta, fuera de juego y tiro — el CHECK
  *    `coords_field_only` incluye el córner, pero el córner no se marca en el campo,
  *    así que aquí no viajan.
+ *  · El AUTOGOL es el ÚNICO evento del rival que lleva jugador nuestro (`isOwnGoal`):
+ *    un `goal` con `side: 'rival'` y `player_id`. Y entonces el dorsal se va a null —
+ *    el CHECK `actor_by_side` no admite dos actores en la misma fila.
  *
  * Y el `metadata` se monta por tipo: `outcome` solo en penalti, `foul_kind` solo en
  * falta, `corner_side` solo en córner, y la `note` solo en eventos del rival (es
@@ -399,6 +423,14 @@ export function buildTimelineEventRow(
     input.type === 'foul' || input.type === 'corner' ? 'own' : input.side;
 
   const porUbicacion = input.type === 'offside' || input.type === 'shot' || input.type === 'corner';
+  // El autogol lleva jugador EN VEZ de dorsal. Si llegan los dos, manda el dorsal y
+  // la fila se queda como el gol rival de siempre: el esquema ya rechaza esa pareja
+  // antes de llegar aquí (`own_goal_no_dorsal`), y entre las dos lecturas de un
+  // input contradictorio, colgarle sin querer un gol en propia a un crío es la peor.
+  // Misma precedencia que `actorPatchFor`, para que las dos puertas digan lo mismo.
+  const esAutogol =
+    isOwnGoal({ side, type: input.type, playerId: input.player_id }) &&
+    input.rival_dorsal == null;
   const conCoordenadas = input.type === 'foul' || input.type === 'offside' || input.type === 'shot';
 
   const metadata: Record<string, string> = {};
@@ -417,9 +449,10 @@ export function buildTimelineEventRow(
     created_by: ctx.createdBy,
     side,
     type: input.type,
-    player_id: side === 'own' && !porUbicacion ? (input.player_id ?? null) : null,
+    player_id:
+      (side === 'own' && !porUbicacion) || esAutogol ? (input.player_id ?? null) : null,
     related_player_id: input.type === 'substitution' ? (input.related_player_id ?? null) : null,
-    rival_dorsal: side === 'rival' ? (input.rival_dorsal ?? null) : null,
+    rival_dorsal: side === 'rival' && !esAutogol ? (input.rival_dorsal ?? null) : null,
     x_pct: conCoordenadas && input.x_pct !== undefined ? input.x_pct : null,
     y_pct: conCoordenadas && input.y_pct !== undefined ? input.y_pct : null,
     period,

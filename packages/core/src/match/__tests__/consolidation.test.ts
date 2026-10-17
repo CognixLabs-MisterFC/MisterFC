@@ -90,6 +90,35 @@ describe('consolidateMatch — materialización = valores de los motores (no rec
     expect(c.players.find((r) => r.playerId === P3)!.started).toBe(false);
   });
 
+  // La afirmación de la pieza del autogol, MEDIDA: la fila lleva a P1 en
+  // `playerId`, pero es `side: 'rival'`, y la consolidación filtra por bando ANTES
+  // de contar. Si alguien quitara ese filtro —o metiera el autogol por el lado
+  // propio— aquí se vería: el niño que mete en su puerta no suma un gol a su ficha.
+  it('el AUTOGOL va al rival en el marcador y NO al jugador en sus stats', () => {
+    const events: ConsolidationEvent[] = [
+      ...baseEvents(),
+      { side: 'rival', type: 'goal', playerId: P1, clockSeconds: 2500 },
+    ];
+    const c = consolidateMatch({
+      starterIds: STARTERS,
+      events,
+      matchClockSeconds: CLOCK,
+      rosterIds: ROSTER,
+    });
+    const p1 = c.players.find((r) => r.playerId === P1)!;
+    const sinAutogol = consolidateMatch({
+      starterIds: STARTERS,
+      events: baseEvents(),
+      matchClockSeconds: CLOCK,
+      rosterIds: ROSTER,
+    });
+    const p1Antes = sinAutogol.players.find((r) => r.playerId === P1)!;
+
+    expect(p1.goals).toBe(p1Antes.goals); // 1 (su penalti), no 2
+    expect(p1.minutesPlayed).toBe(p1Antes.minutesPlayed);
+    expect(c.score).toEqual({ own: sinAutogol.score.own, rival: sinAutogol.score.rival + 1 });
+  });
+
   it('marcador final = computeScore (penalti marcado cuenta; la tanda no)', () => {
     const events = baseEvents();
     const scoreEvents: ScoreEvent[] = events.map((e) => ({ side: e.side, type: e.type, outcome: e.outcome ?? null }));

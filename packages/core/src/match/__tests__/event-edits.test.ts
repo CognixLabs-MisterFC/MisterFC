@@ -179,16 +179,40 @@ describe('actorPatchFor · qué se puede cambiar en ESTA fila', () => {
     ).toEqual({ player_id: PLAYER, related_player_id: PLAYER_2 });
   });
 
-  // El CHECK `actor_by_side`: un evento del rival no tiene jugador NUESTRO.
-  it('evento del rival: solo el dorsal, y el jugador se descarta', () => {
+  // El CHECK `actor_by_side`: un evento del rival no tiene jugador NUESTRO, salvo
+  // el AUTOGOL, que es un `goal`. Por eso la tarjeta descarta el jugador y el gol no.
+  it('tarjeta del rival: solo el dorsal, y el jugador se descarta', () => {
+    expect(
+      actorPatchFor({ side: 'rival', type: 'yellow_card' }, { player_id: PLAYER, rival_dorsal: 9 }),
+    ).toEqual({ rival_dorsal: 9 });
+  });
+
+  it('gol del rival: poner JUGADOR lo convierte en autogol y apaga el dorsal', () => {
+    expect(actorPatchFor({ side: 'rival', type: 'goal' }, { player_id: PLAYER })).toEqual({
+      player_id: PLAYER,
+      rival_dorsal: null,
+    });
+  });
+
+  it('gol del rival: poner DORSAL deshace el autogol y apaga el jugador', () => {
+    expect(actorPatchFor({ side: 'rival', type: 'goal' }, { rival_dorsal: 9 })).toEqual({
+      rival_dorsal: 9,
+      player_id: null,
+    });
+  });
+
+  // Los dos a la vez es un fallo del llamante. Manda el dorsal: colgarle sin querer
+  // un gol en propia puerta a un crío es la peor de las dos lecturas.
+  it('gol del rival con jugador Y dorsal: manda el dorsal', () => {
     expect(
       actorPatchFor({ side: 'rival', type: 'goal' }, { player_id: PLAYER, rival_dorsal: 9 }),
-    ).toEqual({ rival_dorsal: 9 });
+    ).toEqual({ rival_dorsal: 9, player_id: null });
   });
 
   it('dorsal 0 es un dorsal (no se cae por falsy)', () => {
     expect(actorPatchFor({ side: 'rival', type: 'goal' }, { rival_dorsal: 0 })).toEqual({
       rival_dorsal: 0,
+      player_id: null,
     });
   });
 
@@ -504,11 +528,28 @@ describe('buildTimelineEventRow · las reglas de los 10 tipos', () => {
     expect(fila({ side: 'own', type: 'shot', player_id: PLAYER }).player_id).toBeNull();
   });
 
-  it('un gol del RIVAL lleva dorsal y NINGÚN jugador nuestro', () => {
+  // Con dorsal Y jugador manda el dorsal (el esquema ya rechaza esa pareja antes de
+  // llegar aquí; esto es el cinturón, y la misma precedencia que `actorPatchFor`).
+  it('un gol del RIVAL con dorsal no lleva jugador nuestro', () => {
     const r = fila({ side: 'rival', type: 'goal', rival_dorsal: 9, player_id: PLAYER });
     expect(r.rival_dorsal).toBe(9);
     expect(r.player_id).toBeNull();
     expect(r.related_player_id).toBeNull();
+  });
+
+  // AUTOGOL: el único evento del rival que lleva jugador nuestro. Y sin dorsal, que
+  // el CHECK `actor_by_side` no admite dos actores en la misma fila.
+  it('el AUTOGOL guarda al autor y deja el dorsal en null', () => {
+    const r = fila({ side: 'rival', type: 'goal', player_id: PLAYER });
+    expect(r.side).toBe('rival');
+    expect(r.player_id).toBe(PLAYER);
+    expect(r.rival_dorsal).toBeNull();
+    expect(r.related_player_id).toBeNull();
+  });
+
+  it('la excepción es SOLO del gol: una tarjeta del rival no guarda jugador', () => {
+    const r = fila({ side: 'rival', type: 'yellow_card', player_id: PLAYER });
+    expect(r.player_id).toBeNull();
   });
 
   it('el segundo jugador SOLO viaja en una sustitución', () => {

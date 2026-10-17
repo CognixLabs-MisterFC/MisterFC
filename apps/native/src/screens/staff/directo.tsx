@@ -5,6 +5,7 @@ import {
   buildMatchEventRow,
   canFinishMatch,
   computeScore,
+  isOwnGoal,
   currentPeriod,
   addMatchEventFromClient,
   deleteMatchEventFromClient,
@@ -249,18 +250,24 @@ export function DirectoControlScreen({ eventId }: { eventId: string | null }) {
   const nameById = new Map(
     roster.map((r) => [r.playerId, `${r.firstName} ${r.lastName}`.trim()] as const),
   );
-  const overlayEvents: DetailEvent[] = queue.overlay.map((r) => ({
-    id: r.id,
-    side: r.side,
-    type: r.type,
-    label:
-      r.side === 'rival'
-        ? `#${r.rival_dorsal}`
-        : nameById.get(r.player_id ?? '') || t('directo_entry.player'),
-    clockSeconds: r.clock_seconds,
-    displayMinute: r.display_minute,
-    period: r.period as PeriodKind,
-  }));
+  const overlayEvents: DetailEvent[] = queue.overlay.map((r) => {
+    // El AUTOGOL es del rival en el marcador y nuestro en el acta: lleva el nombre
+    // del autor, no un dorsal. Misma regla que el timeline del servidor (core).
+    const autogol = isOwnGoal({ side: r.side, type: r.type, playerId: r.player_id });
+    return {
+      id: r.id,
+      side: r.side,
+      type: r.type,
+      label:
+        r.side === 'rival' && !autogol
+          ? `#${r.rival_dorsal}`
+          : nameById.get(r.player_id ?? '') || t('directo_entry.player'),
+      ownGoal: autogol,
+      clockSeconds: r.clock_seconds,
+      displayMinute: r.display_minute,
+      period: r.period as PeriodKind,
+    };
+  });
   const mergedEvents = mergeLiveEvents(detail.events, overlayEvents);
   const score = computeScore(mergedEvents);
   const serverIds = new Set(detail.events.map((e) => e.id));

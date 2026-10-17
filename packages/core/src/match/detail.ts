@@ -4,7 +4,7 @@ import { MANAGEABLE_MATCH_TYPES } from '../events/types';
 import { getFormation, defaultLineupDraft } from '../lineups/formations';
 import type { TeamFormat } from '../lineups/types';
 import { getSportingNamesFromClient } from '../player-profile/sporting-names';
-import { computeScore } from './score';
+import { computeScore, isOwnGoal } from './score';
 import { aggregateMatchTeamStats, type MatchTeamStats } from './team-events';
 import { asPeriodCount, type ClockPeriod, type PeriodCount, type PeriodKind } from './clock';
 
@@ -39,6 +39,12 @@ export type DetailEvent = {
   side: 'own' | 'rival';
   type: string;
   label: string; // nombre del jugador propio o "#dorsal" del rival
+  /**
+   * AUTOGOL: un gol del rival marcado por los nuestros (`isOwnGoal`). Entonces el
+   * `label` NO es un dorsal, es el nombre de nuestro jugador — y cada pantalla pone
+   * su marca («p.p.») con su propio idioma, porque core no guarda textos de UI.
+   */
+  ownGoal: boolean;
   clockSeconds: number;
   displayMinute: number | null;
   period: PeriodKind;
@@ -268,14 +274,16 @@ export async function getMatchDetailFromClient(
 
   const events: DetailEvent[] = rows.map((r) => {
     const own = evtNames != null ? evtNames.get(r.player_id ?? '') : r.players;
+    // El autogol es del rival en el marcador y NUESTRO en el acta: lleva el nombre
+    // de quien lo marcó, no un dorsal que no existe.
+    const autogol = isOwnGoal({ side: r.side, type: r.type, playerId: r.player_id });
+    const nombre = own?.last_name || own?.first_name || '—';
     return {
       id: r.id,
       side: r.side,
       type: r.type,
-      label:
-        r.side === 'rival'
-          ? `#${r.rival_dorsal ?? '?'}`
-          : own?.last_name || own?.first_name || '—',
+      label: r.side === 'rival' && !autogol ? `#${r.rival_dorsal ?? '?'}` : nombre,
+      ownGoal: autogol,
       clockSeconds: r.clock_seconds,
       displayMinute: r.display_minute,
       period: r.period,

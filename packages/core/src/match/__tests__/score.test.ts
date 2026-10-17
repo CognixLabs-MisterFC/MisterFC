@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   isMatchGoal,
+  isOwnGoal,
   computeScore,
   computeShootout,
   isPenaltyOutcome,
@@ -22,6 +23,28 @@ describe('isMatchGoal — qué cuenta como gol del partido', () => {
   });
 });
 
+describe('isOwnGoal — el autogol se reconoce por la FORMA de la fila', () => {
+  const AUTOR = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
+
+  it('gol del rival + jugador nuestro = autogol', () => {
+    expect(isOwnGoal({ side: 'rival', type: 'goal', playerId: AUTOR })).toBe(true);
+  });
+
+  it('el gol del rival por dorsal NO lo es', () => {
+    expect(isOwnGoal({ side: 'rival', type: 'goal', playerId: null })).toBe(false);
+    expect(isOwnGoal({ side: 'rival', type: 'goal' })).toBe(false);
+  });
+
+  it('nuestro gol NO lo es, por mucho jugador que lleve', () => {
+    expect(isOwnGoal({ side: 'own', type: 'goal', playerId: AUTOR })).toBe(false);
+  });
+
+  it('solo el GOL: la tarjeta o el penalti del rival nunca', () => {
+    expect(isOwnGoal({ side: 'rival', type: 'yellow_card', playerId: AUTOR })).toBe(false);
+    expect(isOwnGoal({ side: 'rival', type: 'penalty', playerId: AUTOR })).toBe(false);
+  });
+});
+
 describe('computeScore — marcador por bando (goles + penaltis marcados)', () => {
   it('suma goles y penaltis marcados de cada lado; ignora la tanda', () => {
     const events: ScoreEvent[] = [
@@ -38,6 +61,17 @@ describe('computeScore — marcador por bando (goles + penaltis marcados)', () =
 
   it('sin eventos → 0-0', () => {
     expect(computeScore([])).toEqual({ own: 0, rival: 0 });
+  });
+
+  // El autogol NO necesita que `computeScore` se entere de nada: es un gol con
+  // `side: 'rival'`, y el marcador ya va por bando. Este test está para que, si
+  // alguien convirtiera el autogol en un tipo propio, se ponga rojo aquí.
+  it('el AUTOGOL suma al rival, sin saber que es un autogol', () => {
+    const events: ScoreEvent[] = [
+      { side: 'own', type: 'goal' },
+      { side: 'rival', type: 'goal' }, // autogol: la fila es idéntica en el marcador
+    ];
+    expect(computeScore(events)).toEqual({ own: 1, rival: 1 });
   });
 });
 

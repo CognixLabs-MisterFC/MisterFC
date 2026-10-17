@@ -63,13 +63,18 @@ export interface QueuedMatchEventRow {
 /**
  * Registro rápido: lo MÍNIMO que el entrenador elige (tipo + actor). El resto
  * (bando, reloj, minuto, periodo) lo deriva `buildMatchEventRow`. Cubre los
- * eventos "está pasando AHORA": gol propio, tarjeta, cambio y gol rival.
+ * eventos "está pasando AHORA": gol propio, tarjeta, cambio, gol rival y autogol.
+ *
+ * El AUTOGOL entra aquí y no solo en el alta manual a propósito: pasa EN VIVO, y si
+ * no se pudiera apuntar en el momento el entrenador volvería a la salida de hoy —un
+ * gol del rival con un dorsal inventado—, que es justo la mentira que esto quita.
  */
 export type QuickEntryInput =
   | { kind: 'player_goal'; playerId: string }
   | { kind: 'card'; card: 'yellow_card' | 'red_card'; playerId: string }
   | { kind: 'substitution'; playerOutId: string; playerInId: string }
-  | { kind: 'rival_goal'; dorsal: number };
+  | { kind: 'rival_goal'; dorsal: number }
+  | { kind: 'own_goal'; playerId: string };
 
 /** Contexto para construir la fila COMPLETA en el instante del toque. */
 export interface BuildEventContext {
@@ -125,6 +130,11 @@ export function buildMatchEventRow(
       };
     case 'rival_goal':
       return { ...base, side: 'rival', type: 'goal', rival_dorsal: input.dorsal };
+    // AUTOGOL: gol del RIVAL en el marcador (side) con autor NUESTRO (player_id) y
+    // sin dorsal. La forma la permite el CHECK `actor_by_side` desde la mig
+    // 20261128000000, y solo para `goal`; `isOwnGoal` (core) es quien la reconoce.
+    case 'own_goal':
+      return { ...base, side: 'rival', type: 'goal', player_id: input.playerId };
   }
 }
 

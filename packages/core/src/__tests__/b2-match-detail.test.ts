@@ -105,8 +105,38 @@ describe('getMatchDetailFromClient (B2)', () => {
     expect(d!.fieldPlayers[0]!.xPct).toBe(50);
     expect(d!.events).toHaveLength(2);
     expect(d!.events[0]!.label).toBe('García');
+    expect(d!.events[0]!.ownGoal).toBe(false);
     expect(d!.events[1]!.label).toBe('#9');
+    expect(d!.events[1]!.ownGoal).toBe(false);
     expect(d!.halfDurationMinutes).toBe(25);
+  });
+
+  // El AUTOGOL es del rival en el marcador y NUESTRO en el acta: la fila lleva
+  // `side: 'rival'` y jugador nuestro, así que el marcador le suma al rival (sin que
+  // nada nuevo se lo tenga que explicar) y la etiqueta trae el NOMBRE, no un dorsal
+  // que no existe. La marca de «p.p.» la pone cada pantalla con su idioma.
+  it('AUTOGOL: suma al rival en el marcador y sale con el nombre del autor', async () => {
+    const sb = mockClient({
+      events: { data: [EVENT_MATCH] },
+      match_state: { data: [{ status: 'closed', live_positions: null }] },
+      match_periods: { data: [] },
+      lineups: { data: [] },
+      lineup_positions: { data: [] },
+      match_events: {
+        data: [
+          {
+            id: 'ag1', side: 'rival', type: 'goal', player_id: 'p1', rival_dorsal: null,
+            clock_seconds: 400, display_minute: 6, period: 'first_half', metadata: {},
+            players: { first_name: 'Ana', last_name: 'García', dorsal: 1 },
+          },
+        ],
+      },
+    });
+    const d = await getMatchDetailFromClient(sb, 'C1', 'e1');
+    expect(d!.goalsOwn).toBe(0);
+    expect(d!.goalsRival).toBe(1);
+    expect(d!.events[0]!.ownGoal).toBe(true);
+    expect(d!.events[0]!.label).toBe('García');
   });
 
   it('sin alineación oficial → hasLineup false, formación por defecto del formato', async () => {

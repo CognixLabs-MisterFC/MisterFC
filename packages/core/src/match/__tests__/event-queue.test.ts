@@ -133,6 +133,29 @@ describe('buildMatchEventRow (fila completa en el instante del toque)', () => {
     expect(row).toMatchObject({ side: 'rival', type: 'goal', rival_dorsal: 9, player_id: null });
   });
 
+  // AUTOGOL: la fila es un gol del RIVAL (eso es lo que decide el marcador) con
+  // autor NUESTRO. Sin dorsal: el CHECK `actor_by_side` no admite dos actores.
+  it('autogol: side rival, jugador NUESTRO y sin dorsal', () => {
+    const row = buildMatchEventRow({ kind: 'own_goal', playerId: P1 }, ctx(uid(6)));
+    expect(row).toMatchObject({
+      side: 'rival',
+      type: 'goal',
+      player_id: P1,
+      rival_dorsal: null,
+      related_player_id: null,
+    });
+  });
+
+  // El que distingue de verdad: el autogol y el gol propio del MISMO jugador solo se
+  // diferencian en el bando. Si alguien copiara la rama de `player_goal`, esto cae.
+  it('el autogol NO es un gol propio: cambia el bando, no solo el actor', () => {
+    const propio = buildMatchEventRow({ kind: 'player_goal', playerId: P1 }, ctx(uid(7)));
+    const autogol = buildMatchEventRow({ kind: 'own_goal', playerId: P1 }, ctx(uid(7)));
+    expect(propio.side).toBe('own');
+    expect(autogol.side).toBe('rival');
+    expect({ ...propio, side: 'rival' }).toEqual(autogol);
+  });
+
   it('mismo ctx (mismo id/nowMs) → misma fila (pura, reproducible)', () => {
     const a = buildMatchEventRow({ kind: 'player_goal', playerId: P1 }, ctx(uid(1)));
     const b = buildMatchEventRow({ kind: 'player_goal', playerId: P1 }, ctx(uid(1)));

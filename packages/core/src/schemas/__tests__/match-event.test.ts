@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   registerPlayerFieldEventSchema,
   registerFoulSchema,
+  addTimelineEventSchema,
 } from '../match-event';
 
 const EVENT_ID = 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa';
@@ -110,5 +111,58 @@ describe('registerFoulSchema — coords opcionales (falta por toque de jugador)'
       y_pct: 50,
     });
     expect(r.success).toBe(false);
+  });
+});
+
+describe('addTimelineEventSchema — el AUTOGOL es el gol del rival con autor nuestro', () => {
+  const base = { event_id: EVENT_ID, id: ROW_ID, display_minute: 23 };
+
+  it('acepta un gol del rival con jugador NUESTRO y sin dorsal', () => {
+    const r = addTimelineEventSchema.safeParse({
+      ...base,
+      side: 'rival',
+      type: 'goal',
+      player_id: PLAYER_ID,
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it('rechaza el autogol con dorsal TAMBIÉN: una fila no declara dos autores', () => {
+    const r = addTimelineEventSchema.safeParse({
+      ...base,
+      side: 'rival',
+      type: 'goal',
+      player_id: PLAYER_ID,
+      rival_dorsal: 7,
+    });
+    expect(r.success).toBe(false);
+    expect(r.error?.issues.map((i) => i.message)).toContain('own_goal_no_dorsal');
+  });
+
+  it('un gol del rival SIN jugador sigue exigiendo dorsal', () => {
+    const r = addTimelineEventSchema.safeParse({ ...base, side: 'rival', type: 'goal' });
+    expect(r.success).toBe(false);
+    expect(r.error?.issues.map((i) => i.message)).toContain('dorsal_required');
+  });
+
+  it('la excepción es SOLO para el gol: la tarjeta del rival sigue pidiendo dorsal', () => {
+    const r = addTimelineEventSchema.safeParse({
+      ...base,
+      side: 'rival',
+      type: 'yellow_card',
+      player_id: PLAYER_ID,
+    });
+    expect(r.success).toBe(false);
+    expect(r.error?.issues.map((i) => i.message)).toContain('dorsal_required');
+  });
+
+  it('el gol del rival por dorsal, que es el de siempre, sigue entrando', () => {
+    const r = addTimelineEventSchema.safeParse({
+      ...base,
+      side: 'rival',
+      type: 'goal',
+      rival_dorsal: 9,
+    });
+    expect(r.success).toBe(true);
   });
 });
