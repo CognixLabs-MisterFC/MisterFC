@@ -9,7 +9,9 @@
 -- Casos:
 --   Triggers / constraints (superuser, RLS bypass):
 --     T1.  own + rival_dorsal           → check_violation (actor_by_side).
---     T2.  rival + player_id            → check_violation (actor_by_side).
+--     T2.  rival + player_id (tarjeta)  → check_violation (actor_by_side). El GOL
+--          del rival con jugador nuestro es el AUTOGOL y desde la mig
+--          20261128000000 SÍ se permite: lo mide el_autogol_lleva_autor.sql.
 --     T3.  goal con x/y                 → check_violation (coords_field_only).
 --     T4.  corner con x/y               → OK.
 --     T5.  goal con related_player_id   → check_violation (related_only_sub).
@@ -113,10 +115,17 @@ do $$ begin
 end $$;
 
 -- T2. rival + player_id → check_violation.
+--
+-- Va con TARJETA, no con gol, y el cambio no es cosmético: desde la migración
+-- 20261128000000 un `goal` del rival con jugador nuestro es un AUTOGOL y entra. Lo
+-- que esta línea sigue afirmando —y es lo que siempre quiso afirmar— es que un
+-- evento del rival no se le cuelga a un jugador nuestro; la excepción del autogol
+-- se abre SOLO para `goal`, y el otro lado de esa frontera lo mide
+-- supabase/tests/el_autogol_lleva_autor.sql.
 do $$ begin
   begin
     insert into public.match_events (event_id, club_id, side, type, player_id, clock_seconds, created_by)
-      values ('77f70000-0ee0-0001-0000-000000000000', '77f70000-0000-0000-0000-000000000001', 'rival', 'goal', '77f70000-0c00-0001-0000-000000000000', 100, '77f70000-aaaa-0002-0000-000000000000');
+      values ('77f70000-0ee0-0001-0000-000000000000', '77f70000-0000-0000-0000-000000000001', 'rival', 'yellow_card', '77f70000-0c00-0001-0000-000000000000', 100, '77f70000-aaaa-0002-0000-000000000000');
     raise exception 'FAIL [T2]: rival con player_id debería rechazarse';
   exception when check_violation then null; end;
 end $$;
