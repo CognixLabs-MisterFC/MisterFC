@@ -18,6 +18,15 @@
 /** La forma de `process.env`: solo se leen `MARKETING_SITE` y `VERCEL_ENV`. */
 export type MarketingSiteEnv = Readonly<Record<string, string | undefined>>;
 
+/**
+ * Las variables que lee `isMarketingSiteOn`. Van declaradas en la tarea `build` de
+ * `turbo.json`: Vercel compila con `turbo run build`, y Turborepo solo deja ver al build
+ * las variables declaradas. Sin ellas, lo que se genera al compilar (el sitemap, las
+ * legales de la web y `/demo/gracias`) sale APAGADO aunque la web esté encendida: pasó
+ * en producción el 17-10-2026, con sitemap de 4 URLs y esas páginas en 404.
+ */
+export const MARKETING_SITE_ENV_KEYS = ['MARKETING_SITE', 'VERCEL_ENV'] as const;
+
 export function isMarketingSiteOn(env: MarketingSiteEnv): boolean {
   const value = env.MARKETING_SITE?.trim().toLowerCase();
   if (value === 'on') return true;
