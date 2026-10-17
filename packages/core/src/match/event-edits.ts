@@ -30,6 +30,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../supabase/types';
 import { getCurrentUserFromClient } from '../auth/current-user';
 import {
+  addTimelineEventSchema,
   deleteMatchEventSchema,
   updateEventActorSchema,
   updateEventMinuteSchema,
@@ -323,4 +324,177 @@ export async function updateMatchEventActorFromClient(
   const rc = await reconsolidateIfClosed(supabase, event_id);
   if (rc) return { ok: false, error: rc };
   return { ok: true };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AÑADIR un evento que se olvidó
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * La fila de `match_events` de un alta MANUAL, construida a partir de lo que el
+ * entrenador elige y del reloj del partido. Pura: dados el mismo input y los mismos
+ * periodos, la misma fila.
+ *
+ * Vivía dentro de `addMatchEvent` (apps/web), que no tiene suite. Y es justo donde se
+ * decide si la fila viola un CHECK de la tabla, que es un rechazo que llega a la
+ * pantalla como «error genérico» y no explica nada. Las tres reglas que aplica:
+ *
+ *  · FALTA y CÓRNER son SIEMPRE nuestras. Se registran desde nuestro panel (§7.4b);
+ *    un `side: 'rival'` que llegue se corrige aquí en vez de dejar que lo rechace la
+ *    base. El esquema (`addTimelineEventSchema`) también lo exige, así que esto es el
+ *    cinturón de los dos.
+ *  · FUERA DE JUEGO, TIRO y CÓRNER propios van por UBICACIÓN, sin jugador. El resto de
+ *    los tipos propios llevan jugador.
+ *  · Las COORDENADAS solo en falta, fuera de juego y tiro — el CHECK
+ *    `coords_field_only` incluye el córner, pero el córner no se marca en el campo,
+ *    así que aquí no viajan.
+ *
+ * Y el `metadata` se monta por tipo: `outcome` solo en penalti, `foul_kind` solo en
+ * falta, `corner_side` solo en córner, y la `note` solo en eventos del rival (es
+ * donde se apunta a quién se le vio hacer qué, sin ficha de jugador).
+ */
+export type TimelineEventRow = {
+  id: string;
+  event_id: string;
+  club_id: string;
+  created_by: string;
+  side: 'own' | 'rival';
+  type: string;
+  player_id: string | null;
+  related_player_id: string | null;
+  rival_dorsal: number | null;
+  x_pct: number | null;
+  y_pct: number | null;
+  period: PeriodKind;
+  clock_seconds: number;
+  display_minute: number;
+  metadata: Record<string, string>;
+};
+
+export function buildTimelineEventRow(
+  input: {
+    id: string;
+    event_id: string;
+    side: 'own' | 'rival';
+    type: string;
+    display_minute: number;
+    player_id?: string;
+    related_player_id?: string;
+    rival_dorsal?: number;
+    outcome?: string;
+    foul_kind?: string;
+    corner_side?: string;
+    x_pct?: number;
+    y_pct?: number;
+    note?: string;
+  },
+  ctx: { clubId: string; createdBy: string; periods: readonly ClockPeriod[] },
+): TimelineEventRow {
+  const { clockSeconds, period, displayMinute } = clockFieldsForMinute(
+    ctx.periods,
+    input.display_minute,
+  );
+
+  const side: 'own' | 'rival' =
+    input.type === 'foul' || input.type === 'corner' ? 'own' : input.side;
+
+  const porUbicacion = input.type === 'offside' || input.type === 'shot' || input.type === 'corner';
+  const conCoordenadas = input.type === 'foul' || input.type === 'offside' || input.type === 'shot';
+
+  const metadata: Record<string, string> = {};
+  if (input.type === 'penalty' && input.outcome) metadata.outcome = input.outcome;
+  if (input.type === 'foul' && input.foul_kind) metadata.foul_kind = input.foul_kind;
+  if (input.type === 'corner' && input.corner_side) {
+    metadata.corner_side = input.corner_side;
+  }
+  const nota = input.note?.trim();
+  if (side === 'rival' && nota) metadata.note = nota;
+
+  return {
+    id: input.id,
+    event_id: input.event_id,
+    club_id: ctx.clubId,
+    created_by: ctx.createdBy,
+    side,
+    type: input.type,
+    player_id: side === 'own' && !porUbicacion ? (input.player_id ?? null) : null,
+    related_player_id: input.type === 'substitution' ? (input.related_player_id ?? null) : null,
+    rival_dorsal: side === 'rival' ? (input.rival_dorsal ?? null) : null,
+    x_pct: conCoordenadas && input.x_pct !== undefined ? input.x_pct : null,
+    y_pct: conCoordenadas && input.y_pct !== undefined ? input.y_pct : null,
+    period,
+    clock_seconds: clockSeconds,
+    display_minute: displayMinute,
+    metadata,
+  };
+}
+
+/**
+ * ALTA de un evento olvidado, en el minuto que diga el entrenador.
+ *
+ * `upsert` con `ignoreDuplicates` por el id de cliente: subir dos veces el mismo id no
+ * duplica. Es la misma idempotencia que la cola del directo, y la que permite que la
+ * carga en cadena reintente sin miedo.
+ *
+ * `reconsolidate: false` existe para la carga EN CADENA: re-materializar stats y
+ * marcador en cada alta son N pasadas completas (releer todo y delete+reinsert) para
+ * cargar un partido de veinticinco eventos. En cadena se pasa `false` y se consolida
+ * UNA vez al final; para un alta suelta, el valor por defecto hace lo correcto.
+ */
+export async function addMatchEventFromClient(
+  supabase: DbClient,
+  input: unknown,
+  opts: { reconsolidate?: boolean } = {},
+): Promise<EventEditOutcome> {
+  const parsed = addTimelineEventSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: 'invalid' };
+  const datos = parsed.data;
+
+  const user = await getCurrentUserFromClient(supabase);
+  if (!user) return { ok: false, error: 'forbidden' };
+
+  const { data: ev } = await supabase
+    .from('events')
+    .select('club_id')
+    .eq('id', datos.event_id)
+    .maybeSingle();
+  if (!ev) return { ok: false, error: 'not_found' };
+
+  if ((await loadEditableStatus(supabase, datos.event_id)) == null) {
+    return { ok: false, error: 'not_editable' };
+  }
+
+  const periods = await loadPeriods(supabase, datos.event_id);
+  if (periods.length === 0) return { ok: false, error: 'no_period' };
+
+  const row = buildTimelineEventRow(datos, {
+    clubId: ev.club_id as string,
+    createdBy: user.id,
+    periods,
+  });
+
+  const { error } = await supabase
+    .from('match_events')
+    .upsert(row, { onConflict: 'id', ignoreDuplicates: true });
+  if (error) return { ok: false, error: mapEditPgErr(error.message, error.code) };
+
+  if (opts.reconsolidate === false) return { ok: true };
+  const rc = await reconsolidateIfClosed(supabase, datos.event_id);
+  if (rc) return { ok: false, error: rc };
+  return { ok: true };
+}
+
+/**
+ * La re-consolidación a mano, para cuando se han metido varios eventos con
+ * `reconsolidate: false`. Es el cierre de la carga en cadena: una sola pasada.
+ *
+ * Devuelve `ok` también cuando el partido está en vivo y no hay nada que
+ * materializar: no es un fallo, es que las stats todavía no existen.
+ */
+export async function reconsolidateMatchFromClient(
+  supabase: DbClient,
+  eventId: string,
+): Promise<EventEditOutcome> {
+  const rc = await reconsolidateIfClosed(supabase, eventId);
+  return rc ? { ok: false, error: rc } : { ok: true };
 }

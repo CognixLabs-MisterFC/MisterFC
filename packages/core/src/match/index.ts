@@ -200,7 +200,10 @@ export type {
 
 export {
   actorPatchFor,
+  addMatchEventFromClient,
+  buildTimelineEventRow,
   eventEditAvailability,
+  reconsolidateMatchFromClient,
   deleteMatchEventFromClient,
   updateMatchEventActorFromClient,
   updateMatchEventMinuteFromClient,
@@ -210,4 +213,5 @@ export type {
   EventEditAvailability,
   EventEditError,
   EventEditOutcome,
+  TimelineEventRow,
 } from './event-edits';

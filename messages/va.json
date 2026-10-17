@@ -5969,9 +5969,6 @@
   },
   "directo_edit": {
     "title": "Corregir",
-    "minute_label": "Minut",
-    "save": "Guardar",
-    "delete": "Esborrar esdeveniment",
     "delete_confirm": "Sí, esborrar",
     "offline": "Sense connexió: una correcció no es pot guardar. Intenta-ho amb cobertura.",
     "unsynced": "Este esdeveniment encara no s’ha pujat. Es podrà corregir quan puge.",

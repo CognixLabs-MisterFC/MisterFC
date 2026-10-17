@@ -5969,9 +5969,6 @@
   },
   "directo_edit": {
     "title": "Corregir",
-    "minute_label": "Minuto",
-    "save": "Guardar",
-    "delete": "Borrar evento",
     "delete_confirm": "Sí, borrar",
     "offline": "Sin conexión: una corrección no se puede guardar. Inténtalo con cobertura.",
     "unsynced": "Este evento todavía no se ha subido. Se podrá corregir cuando suba.",
