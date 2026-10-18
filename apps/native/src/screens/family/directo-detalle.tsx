@@ -2,11 +2,9 @@ import { useEffect, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import {
   getMatchDetailFromClient,
-  getFormation,
   matchPhase,
   eventScopedCacheKey,
   type MatchDetail,
-  type PositionAssignment,
   type ClockPeriod,
   periodLabelKey,
   phaseShowsMinute,
@@ -14,7 +12,7 @@ import {
 import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
-import { ReadonlyLineup, type ReadonlyLineupPlayer } from '@/ui/readonly-lineup';
+import { DirectoFieldCard } from '@/directo/field-card';
 import { useTranslations } from '@/locale/provider';
 import { formatShortDateTime } from '@/lib/format-date';
 import { BRAND } from '@/theme';
@@ -176,57 +174,31 @@ function Scoreboard({
 }
 
 /**
- * Campo del directo (Opción B): sustituye al `Pitch` propio por el MISMO
- * `LineupBoard` read-only del editor (vía `ReadonlyLineup`) para no duplicar el
- * renderizador y añadir el BANQUILLO. Se alimenta del `detail` que YA tiene el
- * directo — conserva el override de `live_positions` en los titulares (el jugador se
- * mueve en el campo durante el partido) — y del `benchPlayers` que ahora trae el
- * detalle, refrescado en cada ciclo de polling como el resto.
+ * Campo del directo para FAMILIA: la alineación OFICIAL, con el override de
+ * `live_positions` que ya trae el detalle (el jugador que el entrenador mueve por
+ * el campo) y el banquillo oficial debajo.
+ *
+ * El bloque de pintura es ahora compartido (`DirectoFieldCard`): lo monta también
+ * el control del cuerpo técnico, que le pasa el ONCE VIVO en vez de la alineación
+ * oficial. Aquí se sigue pasando lo de siempre, a propósito: esta pantalla pinta
+ * lo que la familia puede leer, y el once vivo necesita lecturas que no son suyas
+ * (ausencias y régimen de cambios).
  */
 function FieldCard({ detail, accent }: { detail: MatchDetail; accent: string }) {
   const t = useTranslations('');
   const hasLineup = detail.hasLineup && detail.fieldPlayers.length > 0;
-  const formation = getFormation(detail.formationCode);
-  const formationLabel = formation?.label ?? detail.formationCode;
-
-  const positions: PositionAssignment[] = [
-    ...detail.fieldPlayers.map((p) => ({
-      playerId: p.playerId,
-      location: 'field' as const,
-      positionCode: p.positionCode,
-      xPct: p.xPct,
-      yPct: p.yPct,
-    })),
-    ...detail.benchPlayers.map((p) => ({
-      playerId: p.playerId,
-      location: 'bench' as const,
-      positionCode: null,
-      xPct: null,
-      yPct: null,
-    })),
-  ];
-  const players: ReadonlyLineupPlayer[] = [
-    ...detail.fieldPlayers.map((p) => ({ playerId: p.playerId, label: p.label, dorsal: p.dorsal })),
-    ...detail.benchPlayers.map((p) => ({ playerId: p.playerId, label: p.label, dorsal: p.dorsal })),
-  ];
-
   return (
-    <View className="rounded-2xl border border-zinc-200 p-4">
-      <Text className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-400">
-        {t('directos.field_title')}
-      </Text>
-      {hasLineup ? (
-        <ReadonlyLineup
-          formation={formation}
-          formationLabel={formationLabel}
-          positions={positions}
-          players={players}
-          accent={accent}
-        />
-      ) : (
-        <Text className="py-6 text-center text-sm text-zinc-400">{t('directo.no_lineup')}</Text>
-      )}
-    </View>
+    <DirectoFieldCard
+      title={t('directos.field_title')}
+      formationCode={detail.formationCode}
+      field={hasLineup ? detail.fieldPlayers : []}
+      bench={detail.benchPlayers.map((p) => ({
+        playerId: p.playerId,
+        label: p.label,
+        dorsal: p.dorsal,
+      }))}
+      accent={accent}
+    />
   );
 }
 

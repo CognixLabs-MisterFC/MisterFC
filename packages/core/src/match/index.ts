@@ -57,6 +57,13 @@ export type {
 
 export { deriveSquad } from './squad';
 export type { FieldSlot, Sub, BenchStatus, BenchEntry, Squad, DeriveSquadParams } from './squad';
+export {
+  countSubs,
+  deriveLiveSquad,
+  getLiveSquadInputsFromClient,
+  getSubstitutionRegimeFromClient,
+} from './live-squad';
+export type { LiveSquadInputs } from './live-squad';
 
 // Nota: `clampPct` ya se exporta desde lineups (coach-formations); aquí solo lo
 // usamos internamente en tactics, no lo re-exportamos para evitar el choque.

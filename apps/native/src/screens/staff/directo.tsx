@@ -5,6 +5,8 @@ import {
   buildMatchEventRow,
   canFinishMatch,
   computeScore,
+  deriveLiveSquad,
+  getLiveSquadInputsFromClient,
   isOwnGoal,
   currentPeriod,
   addMatchEventFromClient,
@@ -34,7 +36,9 @@ import {
   type DetailEvent,
   type EventEditOutcome,
   type LineupRosterPlayer,
+  type LiveSquadInputs,
   type MatchDetail,
+  type Sub,
   type PeriodKind,
   type QuickEntryInput,
   periodLabelKey,
@@ -50,7 +54,8 @@ import { useCached } from '@/data/use-cached';
 import { useIsOnline } from '@/data/connectivity';
 import { invalidateAfterWrite } from '@/data/cache-resources';
 import { useEventQueue } from '@/directo/use-event-queue';
-import { QuickEntry } from '@/directo/quick-entry';
+import { QuickEntry, type ActorChip } from '@/directo/quick-entry';
+import { DirectoFieldCard, type FieldCardPlayer } from '@/directo/field-card';
 import { uuidv4 } from '@/lib/uuid';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
 import { KeyboardScrollView } from '@/ui/keyboard';
@@ -86,7 +91,14 @@ const LISTED_EVENTS = new Set([
  */
 
 const LIVE_POLL_MS = 15_000;
-type ControlData = { detail: MatchDetail; canRecord: boolean; roster: LineupRosterPlayer[] };
+type ControlData = {
+  detail: MatchDetail;
+  canRecord: boolean;
+  roster: LineupRosterPlayer[];
+  /** Lo persistido del ONCE VIVO (huecos, banquillo, cambios, expulsiones,
+   *  ausencias, régimen). Se deriva abajo, sumándole la cola. */
+  squad: LiveSquadInputs;
+};
 
 /** "Ahora" que tickea cada segundo con el partido en vivo (patrón B1/B2, sin setState-en-effect del reloj). */
 function useTickingNow(active: boolean): number {
@@ -139,7 +151,11 @@ export function DirectoControlScreen({ eventId }: { eventId: string | null }) {
       // Roster (nombres/dorsales + banquillo) para la entrada rápida de 9b. Se
       // cachea junto al estado → la entrada de eventos funciona también offline.
       const lineup = await getLineupForEventFromClient(sb, { clubId, eventId });
-      return { detail, canRecord, roster: lineup?.roster ?? [] };
+      // El once vivo va en la MISMA lectura que el estado: se cachea con él, así
+      // que el entrenador sin cobertura sigue teniendo las listas de cambio
+      // buenas, que es cuando más falta hacen.
+      const squad = await getLiveSquadInputsFromClient(sb, eventId);
+      return { detail, canRecord, roster: lineup?.roster ?? [], squad };
     },
   );
 
@@ -214,7 +230,9 @@ export function DirectoControlScreen({ eventId }: { eventId: string | null }) {
 
   if (!eventId) return <EmptyState message={t('directo_control.pick_match')} />;
   if (loading) return <LoadingScreen />;
-  if (!detail) return <EmptyState message={t('directo_control.unavailable')} />;
+  // Se comprueba `data` y no `detail` para que a partir de aquí TypeScript sepa
+  // que el resto de la lectura —el roster y el once vivo— también está.
+  if (!data || !detail) return <EmptyState message={t('directo_control.unavailable')} />;
 
   const periods = detail.periods;
   const cur = currentPeriod(periods);
@@ -258,6 +276,7 @@ export function DirectoControlScreen({ eventId }: { eventId: string | null }) {
   const nameById = new Map(
     roster.map((r) => [r.playerId, `${r.firstName} ${r.lastName}`.trim()] as const),
   );
+  const dorsalById = new Map(roster.map((r) => [r.playerId, r.dorsal] as const));
   const overlayEvents: DetailEvent[] = queue.overlay.map((r) => {
     // El AUTOGOL es del rival en el marcador y nuestro en el acta: lleva el nombre
     // del autor, no un dorsal. Misma regla que el timeline del servidor (core).
@@ -280,6 +299,49 @@ export function DirectoControlScreen({ eventId }: { eventId: string | null }) {
   const score = computeScore(mergedEvents);
   const serverIds = new Set(detail.events.map((e) => e.id));
   const optimisticIds = new Set(queue.overlay.map((r) => r.id).filter((id) => !serverIds.has(id)));
+
+  // ── EL ONCE VIVO ──────────────────────────────────────────────────────────
+  // Quién está en el campo AHORA y quién puede entrar. Lo resuelve `deriveSquad`
+  // (core) desde lo persistido MÁS las sustituciones que siguen en la cola: sin
+  // esa segunda mitad, el entrenador tocaría un cambio y las listas no se moverían
+  // hasta que la fila subiera al servidor — en la pantalla donde acaba de tocar.
+  //
+  // Antes de esto, «quién sale» eran los TITULARES de la alineación oficial y
+  // «quién entra» el resto de la convocatoria. Tras el primer cambio las dos
+  // listas mentían, y un cambio apuntado sobre el jugador equivocado reparte mal
+  // los minutos de todo el equipo: `playing-time` los calcula POR estos eventos, y
+  // acaban en la ficha de cada crío.
+  const subsPendientes: Sub[] = queue.overlay
+    .filter((r) => r.type === 'substitution' && r.player_id && r.related_player_id)
+    .map((r) => ({ out: r.player_id as string, in: r.related_player_id as string }));
+  const squad = deriveLiveSquad(data.squad, subsPendientes);
+
+  const chipDe = (playerId: string): ActorChip => ({
+    id: playerId,
+    label: nameById.get(playerId) || t('directo_entry.player'),
+    dorsal: dorsalById.get(playerId) ?? null,
+  });
+  const enCampo: ActorChip[] = squad.onField.map((slot) => chipDe(slot.playerId));
+  const puedenEntrar: ActorChip[] = squad.eligibleInIds.map(chipDe);
+
+  // El campo pinta el once vivo con su posición ya resuelta por core (incluida la
+  // herencia: el que entra ocupa el hueco y la posición del que salió).
+  const enCampoConPosicion: FieldCardPlayer[] = squad.onField.map((slot) => ({
+    playerId: slot.playerId,
+    label: nameById.get(slot.playerId) || t('directo_entry.player'),
+    dorsal: dorsalById.get(slot.playerId) ?? null,
+    positionCode: slot.positionCode,
+    xPct: slot.xPct,
+    yPct: slot.yPct,
+  }));
+  // El banquillo del campo son los que PUEDEN entrar, y no todo el que está fuera:
+  // un expulsado, un ausente o quien ya salió sin derecho a reentrada no son
+  // opciones, y un banquillo en un directo responde a «a quién puedo meter».
+  const banquillo = puedenEntrar.map((c) => ({
+    playerId: c.id,
+    label: c.label,
+    dorsal: c.dorsal,
+  }));
 
   // ── CORRECCIÓN de un evento ya subido (borrar · minuto · actor) ────────────
   // Escritura RLS DIRECTA y ONLINE, como el reloj: no se encola. La regla de si se
@@ -538,6 +600,19 @@ export function DirectoControlScreen({ eventId }: { eventId: string | null }) {
           ) : null}
         </View>
 
+        {/* EL CAMPO. El entrenador ve quién está dentro antes de tocar nada — y lo
+            ve con los cambios ya aplicados, que es lo que esta pieza vino a
+            arreglar. Mismo bloque que pinta la pantalla de familia. */}
+        {haEmpezado ? (
+          <DirectoFieldCard
+            title={t('directos.field_title')}
+            formationCode={detail.formationCode}
+            field={enCampoConPosicion}
+            bench={banquillo}
+            accent={accent}
+          />
+        ) : null}
+
         {/* O2-9b — ENTRADA RÁPIDA de eventos (solo con el partido EN JUEGO). Registra
             optimista + persistente; offline queda en la cola y sube al reconectar.
             Pide `haEmpezado` además de `isLive`, y no por simetría: sin periodos,
@@ -546,8 +621,8 @@ export function DirectoControlScreen({ eventId }: { eventId: string | null }) {
             guardado en el minuto 0 de una parte que no existe. No falla: MIENTE. */}
         {isLive && haEmpezado && canRecord ? (
           <QuickEntry
-            fieldPlayers={detail.fieldPlayers}
-            roster={roster}
+            enCampo={enCampo}
+            puedenEntrar={puedenEntrar}
             accent={accent}
             disabled={false}
             onRegister={onRegister}
