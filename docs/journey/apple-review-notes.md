@@ -26,10 +26,18 @@ seguidor, cuerpo técnico y dirección) y también en la web.
 
 ## 2 · La cuenta de prueba
 
-**`jovimib+familia1@gmail.com`** · contraseña: la constante `PASSWORD` de
+> **Dos papeles, una sola cuenta.** La cuenta que va en la ficha tiene que servir para
+> las dos cosas que mira el revisor: **borrarse** (este apartado) y **comprar** (§7). Para
+> lo segundo, además, su perfil tiene que estar designado en `subscription_test_profiles`,
+> y la del envío de octubre de 2026 es `jovimib+apple@gmail.com` (§7.3, medido). Lo de
+> abajo es el análisis de borrado, hecho sobre `familia1` el 2026-09-11; **el criterio es
+> lo que vale, la cuenta se comprueba en el §7.3**.
+
+La contraseña de cualquiera de estas cuentas es la constante `PASSWORD` de
 [seed-test-accounts.mjs](../../apps/web/scripts/seed-test-accounts.mjs).
 
-Es la correcta porque **no es único tutor de ningún jugador**: está vinculada a Jose
+**El criterio** —lo que hay que cumplir, sea cual sea la cuenta que acabe en la ficha—
+es **no ser único tutor de ningún jugador**. `familia1` lo cumplía: está vinculada a Jose
 Milla, que tiene además a `jovimib+jugador1@gmail.com` como segunda cuenta. Sin
 jugadores bloqueantes, el borrado **se completa entero y de forma síncrona** delante de
 la cámara, sin depender de que ningún club apruebe nada.
@@ -103,7 +111,7 @@ la revisión sin darse cuenta.
 > session is closed and the app shows a confirmation screen. Signing in again with the
 > same credentials is rejected.
 >
-> Demo account: `jovimib+familia1@gmail.com`
+> Demo account: `jovimib+apple@gmail.com`
 > Password: (see App Store Connect credentials field)
 >
 > Note: the deletion is irreversible, so the demo account can only be used once. If you
@@ -120,7 +128,12 @@ la revisión sin darse cuenta.
 ## 6 · Antes de enviar
 
 - [ ] Build EAS con `EXPO_PUBLIC_WEB_URL` apuntando a la web de producción.
-- [ ] `node scripts/seed-test-accounts.mjs` ejecutado y `familia1` con **0 bloqueantes**.
+- [ ] **La cuenta que va en la ficha, con 0 bloqueantes** (§2) — medido sobre **esa**
+      cuenta, no sobre `familia1`: el análisis del 2026-09-11 es de `familia1`, y la
+      designada para Apple desde el 2026-09-26 es `jovimib+apple@gmail.com`, cuyo recuento
+      de bloqueantes **no está medido en este documento**. Con un solo jugador bloqueante,
+      el borrado se queda *pendiente* y el revisor ve una pantalla de espera.
+- [ ] `node scripts/seed-test-accounts.mjs` ejecutado si hubo que recrear la cuenta.
 - [ ] Texto legal de `/legal/eliminacion-cuenta` actualizado y aprobado (BC-8, pieza 1).
 - [ ] Vídeo grabado con el plano final del login rechazado.
 - [ ] Credenciales de la cuenta puestas en App Store Connect.
@@ -162,6 +175,14 @@ producción rechaza la compra del revisor, y la app se cae por Guideline 2.1. Re
 valida los dos entornos por su cuenta, así que **nos manda el webhook con
 `environment: SANDBOX`**.
 
+**Y el revisor de Google Play, igual.** No es un caso aparte: la puerta de
+`apply_subscription_event` se decide con `v_sandbox := upper(p_environment) <>
+'PRODUCTION'` (migración `20261066000000`, línea 100) y **`p_store` no entra en ella** —
+solo se guarda. Así que una compra del revisor de Play llega con `environment: SANDBOX`
+y choca contra la misma reja: sin su fila en la lista, el evento se archiva con
+`skipped_reason = 'sandbox'` y no concede nada. Por eso en la lista hay **dos**
+designaciones y no una (§7.3). Medido el 2026-09-29 (E-6).
+
 Y ahí chocaba con una decisión de SU-1, escrita a propósito: un evento que no fuera
 `PRODUCTION` no aplicaba nada. Existe por un motivo bueno —que nadie con TestFlight se
 abra la puerta de producción— pero tenía una consecuencia que no vi al escribirla: **la
@@ -183,27 +204,61 @@ mandando), y una designación caducada vuelve a ser un `sandbox` normal.
 
 ### 7.3 · El paso que hay que dar antes de enviar
 
-La lista **nace y vive vacía**. Hasta que el perfil del revisor esté en ella, su compra
-sigue sin conceder nada — o sea que esto no es un trámite, es el paso que hace que la
-revisión funcione:
+La lista **nace vacía**, y hasta que el perfil del revisor esté en ella su compra no
+concede nada — o sea que esto no es un trámite, es el paso que hace que la revisión
+funcione. Pero **hoy ya no está vacía**: el envío de octubre de 2026 dejó las dos
+designaciones puestas. **Lo primero es mirar, no insertar.**
+
+**Estado medido en producción el 2026-10-18** (lectura de `subscription_test_profiles`
+contra `auth.users` y `public.profiles`):
+
+| perfil | cuenta | para | vigente hasta (Europe/Madrid) | designada el |
+|---|---|---|---|---|
+| `33b2f09c` | `jovimib+jugador8@gmail.com` | revisor de **Google Play** | 2026-11-28 01:21 | 2026-09-29 |
+| `ec4bb48f` | `jovimib+apple@gmail.com` | revisor de **Apple** | 2026-11-25 15:11 | 2026-09-26 |
+
+Las dos vigentes, los dos perfiles existen y ninguno está anonimizado. Para un envío
+hecho antes de esas fechas **no hay que tocar nada**.
+
+> **Esta tabla caduca sola, y por eso lleva fecha.** No es la lista de cuentas de la
+> casa: es una foto del 2026-10-18. Antes de cada envío se vuelve a mirar, porque lo
+> que decide no es lo que pone aquí sino lo que hay en la fila.
+
+Para mirarlo:
 
 ```sql
--- El `profile_id` es el de la cuenta de prueba (`jovimib+familia1@gmail.com`, §2).
+select left(tp.profile_id::text, 8) as perfil,
+       u.email,
+       tp.valid_until at time zone 'Europe/Madrid' as vigente_hasta,
+       tp.valid_until > now() as vigente,
+       tp.motivo
+  from public.subscription_test_profiles tp
+  join auth.users u on u.id = tp.profile_id
+ order by tp.valid_until;
+```
+
+Y si falta alguna, o está caducada — el `email` es el parámetro, **no** una constante de
+este documento: se pone el de la cuenta que de verdad va en App Store Connect / Play
+Console (ver el recuadro de abajo):
+
+```sql
 -- `valid_until` con margen para toda la revisión y sus posibles reenvíos, no más.
 insert into public.subscription_test_profiles (profile_id, motivo, valid_until)
 select id, 'App Store review · envío ' || to_char(now(), 'YYYY-MM'), now() + interval '60 days'
   from auth.users
- where email = 'jovimib+familia1@gmail.com'
+ where email = 'jovimib+apple@gmail.com'   -- ← la cuenta REAL de la ficha, no la del ejemplo
 on conflict (profile_id) do update
   set motivo = excluded.motivo, valid_until = excluded.valid_until;
 ```
 
-Y para comprobar que la designación está donde tiene que estar:
-
-```sql
-select left(profile_id::text, 8) as perfil, motivo, valid_until > now() as vigente
-  from public.subscription_test_profiles;
-```
+> **La designación y la cuenta de demo tienen que ser LA MISMA.** Es el único invariante
+> de todo el §7, y no estaba escrito: si en App Store Connect va una cuenta y en la lista
+> está designada otra, el revisor entra, paga y **no se le concede nada** — exactamente el
+> rechazo que este apartado existe para evitar, y sin ninguna señal de que algo esté mal.
+> Hasta el 2026-10-18 este documento nombraba `jovimib+familia1@gmail.com` en el §2, en
+> el §5 y en el `insert`, mientras producción tenía designada `jovimib+apple@gmail.com`:
+> quien hubiera seguido el documento al pie de la letra habría puesto en la ficha la
+> cuenta que **no** está en la lista. Se comprueba mirando las dos cosas, no una.
 
 > **Ojo con la cuenta de un solo uso.** Si se recrea `familia1` con
 > `seed-test-accounts.mjs` (§3), el perfil es **otro**: el `profile_id` cambia y la
@@ -247,9 +302,14 @@ Guideline 5.1.1(v) manda por encima del muro.
 
 ## 8 · Antes de enviar (suscripción)
 
-- [ ] **El perfil del revisor, en `subscription_test_profiles`** con la designación
-      vigente (§7.3). SU-8 ya está aplicado, pero la lista nace vacía: sin esta fila, la
-      compra del revisor sigue sin conceder acceso.
+- [ ] **Mirada a `subscription_test_profiles`** con el `select` del §7.3 — primero mirar,
+      que las designaciones de un envío anterior pueden seguir vigentes. Sin fila vigente,
+      la compra del revisor no concede acceso.
+- [ ] **La cuenta de la ficha y la designada son la misma**, en las dos tiendas: el
+      *demo account* de App Store Connect = el perfil designado para Apple, y el de Play
+      Console = el designado para Play. Comprobado mirando las dos, no deducido.
+- [ ] **Play también**: su revisor compra en SANDBOX igual que el de Apple (§7.2), así
+      que necesita su propia fila. Una sola designación cubre una sola tienda.
 - [ ] Si se ha recreado la cuenta de prueba, la designación **rehecha** con el
       `profile_id` nuevo.
 - [ ] Build de EAS con **`EXPO_PUBLIC_SUBSCRIPTION_GATE=on`**: con el gate apagado el muro
