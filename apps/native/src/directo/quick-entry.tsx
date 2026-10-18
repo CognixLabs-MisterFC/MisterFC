@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
-import type { LineupRosterPlayer, QuickEntryInput } from '@misterfc/core';
+import { PENALTY_OUTCOMES, type LineupRosterPlayer, type QuickEntryInput } from '@misterfc/core';
 import { useTranslations } from '@/locale/provider';
 
 /**
@@ -12,6 +12,7 @@ import { useTranslations } from '@/locale/provider';
  *   · Cambio                        → tocar «Cambio», SALE, ENTRA → 3 toques.
  *   · Gol rival                     → tocar «Gol rival», dorsal, registrar.
  *   · En propia                     → tocar «En propia», tocar JUGADOR → 2 toques.
+ *   · Penalti                       → tocar «Penalti», JUGADOR, RESULTADO → 3.
  *
  * El AUTOGOL está aquí, y no solo en el alta manual, porque pasa EN VIVO: si hubiera
  * que esperar al final para apuntarlo, el entrenador volvería a la salida de hoy —un
@@ -22,6 +23,17 @@ import { useTranslations } from '@/locale/provider';
  * registra al instante (optimista + cola). No decide red ni gate: eso lo llevan el
  * hook de cola (offline) y la RLS (al subir). Aquí solo se ELIGE qué pasó.
  *
+ * DOS PISOS, y el de abajo es un solo chip. Arriba está lo que se resuelve en dos
+ * o tres toques y pasa mientras miras el campo; el resto de los diez tipos del
+ * acta —falta, córner, asistencia, fuera de juego, tiro— vive detrás de «Añadir
+ * evento», que abre el formulario completo en el minuto del reloj. El motivo es de
+ * tamaño: medido sobre estos mismos chips, en un móvil de 360 los seis de arriba
+ * ya ocupan tres filas, y meter los cinco restantes —que son los nombres más
+ * largos del catálogo— serían seis filas de paleta antes de elegir jugador.
+ *
+ * El PENALTI sube al primer piso aunque cueste tres toques: cambia el marcador y
+ * hay que apuntarlo en el momento, igual que un gol.
+ *
  * QUIÉN SALE EN CADA LISTA NO SE DECIDE AQUÍ, y antes sí: esta pantalla recibía los
  * titulares de la alineación oficial y restaba para sacar el banquillo. Después del
  * primer cambio eso ya era falso —el que acababa de salir seguía ofreciéndose para
@@ -30,7 +42,7 @@ import { useTranslations } from '@/locale/provider';
  * Ahora las dos listas llegan hechas desde `deriveSquad` (core), que conoce las
  * sustituciones, las expulsiones, las ausencias y el régimen de la categoría.
  */
-type Mode = null | 'goal' | 'yellow_card' | 'red_card' | 'sub' | 'rival' | 'own_goal';
+type Mode = null | 'goal' | 'yellow_card' | 'red_card' | 'sub' | 'rival' | 'own_goal' | 'penalty';
 
 /** Un jugador tal y como se pinta en un chip: con lo justo para tocarlo. */
 export type ActorChip = { id: string; label: string; dorsal: number | null };
@@ -41,6 +53,7 @@ export function QuickEntry({
   accent,
   disabled,
   onRegister,
+  onMore,
 }: {
   /** Quién está en el campo AHORA (ocupantes de los huecos), ya resuelto por core. */
   enCampo: ActorChip[];
@@ -50,16 +63,22 @@ export function QuickEntry({
   accent: string;
   disabled: boolean;
   onRegister: (input: QuickEntryInput) => void;
+  /** Abre el SEGUNDO PISO: el formulario con los diez tipos, en el minuto actual. */
+  onMore: () => void;
 }) {
   const t = useTranslations('');
   const [mode, setMode] = useState<Mode>(null);
   const [subOut, setSubOut] = useState<string | null>(null);
   const [dorsal, setDorsal] = useState('');
+  // Penalti: primero el jugador, después el resultado. Se guarda el jugador aquí
+  // porque el registro no ocurre hasta el segundo toque.
+  const [penaltyPlayer, setPenaltyPlayer] = useState<string | null>(null);
 
   const reset = () => {
     setMode(null);
     setSubOut(null);
     setDorsal('');
+    setPenaltyPlayer(null);
   };
 
   const pickPlayer = (playerId: string) => {
@@ -67,6 +86,12 @@ export function QuickEntry({
     else if (mode === 'own_goal') onRegister({ kind: 'own_goal', playerId });
     else if (mode === 'yellow_card' || mode === 'red_card')
       onRegister({ kind: 'card', card: mode, playerId });
+    else if (mode === 'penalty') {
+      // El penalti NO se registra aquí: falta el resultado, y sin él la fila no se
+      // puede contar ni como gol ni como fallo. Se guarda el autor y se pregunta.
+      setPenaltyPlayer(playerId);
+      return;
+    }
     reset();
   };
 
@@ -98,6 +123,9 @@ export function QuickEntry({
     // `partido_directo.own_goal`: la ÚNICA cadena nueva de la pieza, en el catálogo
     // compartido, porque la usan también el formulario de alta y la web.
     { key: 'own_goal', label: t('partido_directo.own_goal') },
+    // `partido_directo.event.penalty` ya existía en el catálogo (lo usan el acta y
+    // la web); no se inventa una cadena nueva para decir lo mismo.
+    { key: 'penalty', label: t('partido_directo.event.penalty') },
   ];
 
   return (
@@ -143,6 +171,42 @@ export function QuickEntry({
       </View>
 
       {/* Paso 2 — ACTOR. */}
+      {mode === 'penalty' && penaltyPlayer == null ? (
+        <ActorGrid
+          title={t('directo_entry.pick_player')}
+          players={enCampo}
+          onPick={pickPlayer}
+          accent={accent}
+          empty={t('directo_entry.no_field_players')}
+        />
+      ) : null}
+
+      {/* Paso 3 del PENALTI — el resultado, que es lo que decide el marcador. */}
+      {mode === 'penalty' && penaltyPlayer != null ? (
+        <View style={{ gap: 6 }}>
+          <Text className="text-xs text-zinc-400">
+            {t('partido_directo.timeline.field_outcome')}
+          </Text>
+          <View className="flex-row flex-wrap gap-2">
+            {PENALTY_OUTCOMES.map((o) => (
+              <Pressable
+                key={o}
+                onPress={() => {
+                  onRegister({ kind: 'penalty', playerId: penaltyPlayer, outcome: o });
+                  reset();
+                }}
+                className="rounded-xl border border-zinc-200 px-3 py-2 active:opacity-70"
+                style={{ borderLeftWidth: 3, borderLeftColor: accent }}
+              >
+                <Text className="text-sm text-[#0F1B2E]">
+                  {t(`partido_directo.penalty_outcome.${o}`)}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      ) : null}
+
       {mode === 'goal' || mode === 'own_goal' || mode === 'yellow_card' || mode === 'red_card' ? (
         <ActorGrid
           title={t('directo_entry.pick_player')}
@@ -161,6 +225,22 @@ export function QuickEntry({
           accent={accent}
           empty={subOut ? t('directo_entry.no_bench') : t('directo_entry.no_field_players')}
         />
+      ) : null}
+
+      {/* SEGUNDO PISO. Un solo chip, y a propósito con otro aspecto: no es un tipo
+          más, es la puerta al formulario completo (falta, córner, asistencia, fuera
+          de juego, tiro, y el penalti del rival). Abre en el minuto del reloj.
+          Además es la ÚNICA puerta a ese formulario cuando el acta está vacía: hasta
+          ahora solo se llegaba tocando un evento ya apuntado. */}
+      {mode === null ? (
+        <Pressable
+          disabled={disabled}
+          onPress={onMore}
+          className="self-start rounded-xl border border-dashed border-zinc-300 px-3 py-2 active:opacity-70"
+          style={{ opacity: disabled ? 0.4 : 1 }}
+        >
+          <Text className="text-sm text-zinc-500">{t('partido_directo.timeline.add')}</Text>
+        </Pressable>
       ) : null}
 
       {mode === 'rival' ? (

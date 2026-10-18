@@ -45,6 +45,18 @@ export type DetailEvent = {
    * su marca («p.p.») con su propio idioma, porque core no guarda textos de UI.
    */
   ownGoal: boolean;
+  /**
+   * `metadata.outcome` del PENALTI (marcado / parado / fuera), y null en todo lo
+   * demás. Está aquí porque sin él el marcador MIENTE: `isMatchGoal` cuenta un
+   * penalti solo si está marcado, y la pantalla del entrenador re-deriva su
+   * marcador con `computeScore` sobre estas filas (las del servidor más las de su
+   * cola). Sin el resultado, un penalti marcado no sumaba ahí — mientras el
+   * detalle del mismo partido, que suma en core desde las filas crudas, sí lo
+   * contaba. El mismo partido con dos marcadores: 1-0 en el móvil del padre y 0-0
+   * en el del entrenador. Hoy no se ve en producción de milagro: el único penalti
+   * apuntado está PARADO, que no suma por ningún camino.
+   */
+  outcome: string | null;
   clockSeconds: number;
   displayMinute: number | null;
   period: PeriodKind;
@@ -284,6 +296,7 @@ export async function getMatchDetailFromClient(
       type: r.type,
       label: r.side === 'rival' && !autogol ? `#${r.rival_dorsal ?? '?'}` : nombre,
       ownGoal: autogol,
+      outcome: r.metadata?.outcome ?? null,
       clockSeconds: r.clock_seconds,
       displayMinute: r.display_minute,
       period: r.period,
