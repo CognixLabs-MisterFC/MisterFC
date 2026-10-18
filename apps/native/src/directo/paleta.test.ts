@@ -43,9 +43,16 @@ describe('primer piso: lo que se apunta en el momento', () => {
    * penalti SOLO si está marcado, así que una fila sin `outcome` no se podría
    * contar ni como gol ni como fallo. El segundo paso es obligatorio.
    */
-  it('el penalti pregunta el RESULTADO antes de registrar', () => {
+  it('el penalti se registra en UN solo sitio: el del resultado', () => {
     const src = leer(PALETA);
     expect(src).toContain('PENALTY_OUTCOMES');
+    // Contar las ocurrencias, y no solo buscar la buena, es lo que da dientes:
+    // con el aserto anterior —«existe el paso del resultado»— una mutación que
+    // registraba el penalti ya en el toque del jugador, dejando el paso tres
+    // muerto en el fichero, pasaba en VERDE. Lo que importa no es que el paso
+    // exista: es que sea el único camino.
+    const registros = src.match(/kind: 'penalty'/g) ?? [];
+    expect(registros, 'el penalti se registra más de una vez').toHaveLength(1);
     expect(src).toMatch(/kind: 'penalty', playerId: penaltyPlayer, outcome: o/);
   });
 
