@@ -179,7 +179,10 @@ export async function AppShell({ ctx, locale, children, isSuperadmin = false }: 
             isSuperadmin={isSuperadmin}
           />
         </aside>
-        <main className="flex-1 px-4 py-6 sm:px-6 lg:px-10">{children}</main>
+        {/* min-w-0: sin él, <main> (hijo flex) crece hasta el ancho mínimo de su
+            contenido y una tabla con scroll horizontal propio (`overflow-x-auto`, p. ej.
+            las estadísticas del informe) ensancha la página entera en el móvil. */}
+        <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-10">{children}</main>
       </div>
     </div>
   );

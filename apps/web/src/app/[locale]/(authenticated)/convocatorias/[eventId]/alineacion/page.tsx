@@ -43,7 +43,8 @@ export default async function LineupPage({ params, searchParams }: Props) {
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-4">
-      <div className="flex items-center gap-2">
+      {/* En el móvil «En directo» baja de línea: en fila no cabía en 390 px. */}
+      <div className="flex flex-wrap items-center gap-2">
         <Button asChild variant="ghost" size="sm">
           <Link href={`/convocatorias/${eventId}`}>
             <ArrowLeft className="size-4" aria-hidden />
