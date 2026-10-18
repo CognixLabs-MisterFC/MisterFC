@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { matchPhase, phaseShowsMinute } from '../phase';
+import { matchHasStarted, matchPhase, phaseShowsMinute } from '../phase';
 import type { MatchPhaseKind } from '../phase';
 import type { ClockPeriod, PeriodKind } from '../clock';
 
@@ -570,5 +570,40 @@ describe('phaseShowsMinute — ¿minuto o etiqueta de fase?', () => {
       nowMs: T0 + 60_000,
     });
     expect(phaseShowsMinute(phase)).toBe(true);
+  });
+});
+
+describe('matchHasStarted — ¿ha empezado DE VERDAD?', () => {
+  const primera = period({ period: 'first_half', ordinal: 1, running: true, lastStartedAt: iso(T0) });
+
+  it('con periodo y en juego, sí', () => {
+    expect(matchHasStarted([primera], 'live')).toBe(true);
+  });
+
+  it('con sus periodos y cerrado, también: empezó y terminó', () => {
+    expect(matchHasStarted([{ ...primera, running: false, ended: true }], 'closed')).toBe(true);
+  });
+
+  it('sin periodos y sin empezar, no', () => {
+    expect(matchHasStarted([], 'not_started')).toBe(false);
+  });
+
+  /**
+   * EL CASO QUE MOTIVA LA FUNCIÓN, y no es teórico: el 2026-10-16 un partido del
+   * club quedó así —`match_state` en `live`, cero filas en `match_periods`— porque
+   * el arranque escribía el estado antes de comprobar la alineación (#801).
+   *
+   * La columna dice que está en juego y el reloj dice que no existe. Manda el
+   * reloj: mientras esto devuelva false, la pantalla ofrece «Empezar partido», y
+   * ese botón es el que lo repara (`startMatchFromClient` es idempotente). Si
+   * devolviera true, el control se queda sin un solo botón que pulsar.
+   */
+  it('EN LIVE PERO SIN PERIODOS, no: es un arranque a medias, y hay que poder arrancarlo', () => {
+    expect(matchHasStarted([], 'live')).toBe(false);
+  });
+
+  it('con periodos pero el estado sin empezar, tampoco', () => {
+    // La otra mitad de la discrepancia: una reconstrucción de acta a medio hacer.
+    expect(matchHasStarted([primera], 'not_started')).toBe(false);
   });
 });

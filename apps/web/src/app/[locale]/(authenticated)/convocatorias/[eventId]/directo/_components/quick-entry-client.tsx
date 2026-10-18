@@ -19,7 +19,7 @@
 import { useState, useTransition } from 'react';
 import { useTranslations } from 'next-intl';
 import { AlertTriangle, ClipboardList } from 'lucide-react';
-import type { ClockPeriod } from '@misterfc/core';
+import { matchHasStarted, type ClockPeriod } from '@misterfc/core';
 import { Button } from '@/components/ui/button';
 import { useRouter } from '@/i18n/navigation';
 import type { TimelineEntry, RosterPlayer } from '../queries';
@@ -55,7 +55,11 @@ export function QuickEntryClient({
 
   // Necesita reloj (periodos) para mapear minuto→parte. Si no se abrió en directo
   // (not_started o sin periodos) → primero "preparar el acta".
-  const needsPrepare = matchStatus === 'not_started' || periods.length === 0;
+  // CUARTA copia de la misma pregunta, y la encontró el guard: «sin empezar O sin
+  // periodos» es `!matchHasStarted`. Cuatro sitios la preguntaban, tres acertaban y
+  // el del móvil no; mientras cada uno la escriba a su manera, no hay forma de ver
+  // que son la misma.
+  const needsPrepare = !matchHasStarted(periods, matchStatus);
 
   // Continuar desde el último minuto metido (o 0 si aún no hay nada).
   const defaultMinute = timeline.length

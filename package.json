@@ -28,6 +28,7 @@
     "check:cadenas-fantasma": "node scripts/check-cadenas-fantasma.mjs",
     "check:crones-registrados": "node scripts/check-crones-registrados.mjs",
     "check:periodos-sembrados": "node scripts/check-periodos-sembrados.mjs",
+    "check:arranque-del-partido": "node scripts/check-arranque-del-partido.mjs",
     "check:textos-legales": "node scripts/check-textos-legales.mjs",
     "legal:generar": "node scripts/generar-textos-legales.mjs",
     "check:cookies-en-render": "node scripts/check-cookies-en-render.mjs",

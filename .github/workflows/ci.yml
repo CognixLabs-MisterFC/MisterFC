@@ -161,6 +161,15 @@ jobs:
       - name: Check period seeding knows the category count
         run: pnpm check:periodos-sembrados
 
+      # Quien ofrece ARRANCAR un partido tiene que preguntar si ha empezado, y en el
+      # unico sitio donde esta escrita la respuesta. La pregunta estaba en CUATRO
+      # sitios con tres redacciones distintas; la del control del directo de la app
+      # miraba solo match_state.status, asi que con un partido en 'live' sin periodos
+      # —el arranque a medias que cerro #801— la web ofrecia el boton que lo repara y
+      # la app no ofrecia nada. Paso en produccion el 2026-10-16.
+      - name: Check match start asks the shared question
+        run: pnpm check:arranque-del-partido
+
       # Legal-1 — un texto legal tiene UNA copia, los .md del abogado (Documentos/). La
       # que sirve la web se genera en el build, no se versiona y por eso no puede
       # divergir. Lo que este guard vigila ahora es la CADENA que lleva la maestra hasta

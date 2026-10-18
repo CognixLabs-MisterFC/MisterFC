@@ -85,6 +85,46 @@ export function phaseShowsMinute(phase: MatchPhaseKind): boolean {
   return MINUTO_POR_FASE[phase];
 }
 
+/**
+ * ¿El partido ha EMPEZADO de verdad? Es decir: ¿hay algún periodo creado y el
+ * estado dice que ya no está sin empezar?
+ *
+ * Son las dos mitades, y hacen falta las dos porque la columna y el reloj pueden
+ * discrepar. Los dos casos pasan:
+ *
+ *   · `live` SIN periodos → el partido NO ha empezado, por mucho que lo diga la
+ *     columna. Es el estado que deja un arranque a medias: `match_state` ya está
+ *     escrito y la creación de la 1ª parte no llegó a ocurrir (la ventana que
+ *     cerró #801, con la alineación oficial comprobada después de escribir). No
+ *     es teórico: el 2026-10-16 un partido del club quedó así, y el entrenador se
+ *     encontró un control del directo que no ofrecía NADA que pulsar.
+ *   · periodos SIN estado (`not_started`) → tampoco: es una reconstrucción de
+ *     acta que se quedó a medias.
+ *
+ * LO QUE ESTO DESBLOQUEA, y es el motivo de que la pregunta importe: cuando un
+ * partido no ha empezado, la pantalla ofrece «Empezar partido», y
+ * `startMatchFromClient` es IDEMPOTENTE — con el estado ya en `live` no lo
+ * reescribe, congela el once si falta y crea la 1ª parte si no hay ninguna. O
+ * sea: el mismo botón que arranca un partido normal es el que repara el atasco.
+ * Preguntando por la columna, ese botón no se pinta y no hay salida.
+ *
+ * NACE DE DOS COPIAS, como su vecina `phaseShowsMinute`. La web preguntaba
+ * `periods.length > 0 && status !== 'not_started'` y la app `status ===
+ * 'not_started'`, cada una en su pantalla. Con el partido atascado, la web
+ * ofrecía arrancar y la app no: la misma pregunta, dos respuestas, y la que no
+ * tenía salida era la del móvil, que es donde está el entrenador.
+ *
+ * NO decide si se PUEDE arrancar: un partido cerrado tampoco «ha empezado» si
+ * nunca tuvo periodos, y ahí lo que toca es reabrirlo. Esa rama es de la
+ * pantalla, y en las dos va antes que esta.
+ */
+export function matchHasStarted(
+  periods: readonly ClockPeriod[],
+  status: MatchStatus,
+): boolean {
+  return periods.length > 0 && status !== 'not_started';
+}
+
 export interface MatchPhaseInput {
   status: MatchStatus;
   periods: readonly ClockPeriod[];
