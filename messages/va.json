@@ -5239,6 +5239,8 @@
     "evaluations": "Valoracions",
     "contact": "Contacte",
     "contact_unavailable": "No hem pogut carregar les dades de contacte.",
+    "medical_unavailable": "No hem pogut carregar les dades mèdiques.",
+    "notes_unavailable": "No hem pogut carregar les notes.",
     "contact_player_phone": "Telèfon del jugador",
     "contact_email": "Correu",
     "contact_phone": "Telèfon",

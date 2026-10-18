@@ -25,6 +25,8 @@ const leer = (ruta: string) => readFileSync(join(RAIZ, ruta), 'utf8');
 
 const COMPARTIDA = 'src/screens/jugador-ficha.tsx';
 const SECCIONES = 'src/player-ficha/sections.tsx';
+const RESERVADAS = 'src/player-ficha/staff-sections.tsx';
+const GESTION_FAMILIA = 'src/screens/family/gestion.tsx';
 const RUTA_DIRECCION = 'app/direction/jugador.tsx';
 const RUTA_STAFF = 'app/staff/jugador.tsx';
 const PLANTILLA_STAFF = 'src/screens/staff/equipo-detalle.tsx';
@@ -76,21 +78,21 @@ describe('ficha compartida — por dónde se entra', () => {
   });
 });
 
-describe('los bloques de la ficha viven en UN sitio', () => {
-  /** Ficheros .tsx de la app, salvo el módulo compartido. */
-  function fuentesSalvoSecciones(): string[] {
-    const out: string[] = [];
-    const walk = (dir: string) => {
-      for (const e of readdirSync(join(RAIZ, dir), { withFileTypes: true })) {
-        const rel = `${dir}/${e.name}`;
-        if (e.isDirectory()) walk(rel);
-        else if (e.name.endsWith('.tsx') && rel !== SECCIONES) out.push(rel);
-      }
-    };
-    walk('src');
-    return out;
-  }
+/** Todos los ficheros .tsx de la app, en rutas relativas a la raíz del paquete. */
+function fuentesTsx(): string[] {
+  const out: string[] = [];
+  const walk = (dir: string) => {
+    for (const e of readdirSync(join(RAIZ, dir), { withFileTypes: true })) {
+      const rel = `${dir}/${e.name}`;
+      if (e.isDirectory()) walk(rel);
+      else if (e.name.endsWith('.tsx')) out.push(rel);
+    }
+  };
+  walk('src');
+  return out;
+}
 
+describe('los bloques de la ficha viven en UN sitio', () => {
   // La razón de existir de `player-ficha/sections`: "Mi ficha" y la ficha de staff
   // tenían cada una su copia de estos bloques, y dos copias no dan un fallo — dan
   // dos fichas que se parecen cada vez menos. Estas tres cadenas son de dentro de
@@ -99,11 +101,57 @@ describe('los bloques de la ficha viven en UN sitio', () => {
   it.each(['ficha.career_total', 'ficha.att_present', 'ficha.goals_per_match'])(
     '«%s» solo se escribe en el módulo compartido',
     (clave) => {
-      const copias = fuentesSalvoSecciones().filter((f) => leer(f).includes(clave));
+      const copias = fuentesTsx()
+        .filter((f) => f !== SECCIONES)
+        .filter((f) => leer(f).includes(clave));
       expect(copias, `también en: ${copias.join(', ')}`).toEqual([]);
       // Y está donde debe: el aserto de arriba también pasaría si la cadena no
       // existiera en ningún sitio.
       expect(leer(SECCIONES)).toContain(clave);
     },
   );
+});
+
+describe('las dos superficies RESERVADAS de la ficha', () => {
+  // La médica y las notas no son «un bloque más»: son datos de salud de un menor y
+  // lo que el cuerpo técnico escribe sobre él. Viven en su propio módulo y SOLO los
+  // monta la ficha de staff, que es la que las dos áreas de staff abren. Si uno de
+  // estos componentes aparece en un tercer fichero, hay que mirar cuál es.
+  it.each(['FichaMedicalSection', 'FichaNotesSection'])(
+    '«%s» solo existe en el módulo reservado y en la ficha de staff',
+    (componente) => {
+      const donde = fuentesTsx().filter((f) => leer(f).includes(componente));
+      expect(donde.sort()).toEqual([COMPARTIDA, RESERVADAS].sort());
+    },
+  );
+
+  // Y la ficha de FAMILIA no los monta: "Mi ficha" es el hijo mirándose, y las notas
+  // del entrenador sobre él no son suyas. (La médica sí la ve su tutor, pero en
+  // Gestión y con sus propios controles, no aquí.)
+  it('"Mi ficha" no monta ninguna de las dos', () => {
+    const src = leer('src/screens/family/mi-ficha.tsx');
+    expect(src).not.toContain('staff-sections');
+  });
+
+  /**
+   * LAS CLAVES DE CACHÉ NO SE PISAN. Las dos pantallas guardan médica del MISMO
+   * jugador en el almacén cifrado, pero con formas distintas: Gestión guarda la fila
+   * pelada y la ficha de staff guarda un resultado con su estado (`ok`/`forbidden`).
+   * Compartir recurso haría que una leyera lo escrito por la otra — y lo haría en
+   * silencio, porque `cacheGet` solo hace `JSON.parse`.
+   */
+  it('la ficha de staff y la gestión de familia no comparten recurso de caché', () => {
+    const recursos = (ruta: string) =>
+      new Set(
+        [...leer(ruta).matchAll(/playerScopedCacheKey\('([^']+)'/g)].map((m) => m[1] as string),
+      );
+    const staff = recursos(COMPARTIDA);
+    const familia = recursos(GESTION_FAMILIA);
+    // Ancla positiva: si el regex dejara de casar, los dos conjuntos serían vacíos
+    // y la intersección también — verde por no haber mirado nada.
+    expect(staff.size).toBeGreaterThan(0);
+    expect(familia.size).toBeGreaterThan(0);
+    const comunes = [...staff].filter((r) => familia.has(r));
+    expect(comunes, `recursos compartidos: ${comunes.join(', ')}`).toEqual([]);
+  });
 });
