@@ -45,6 +45,7 @@ import {
   formatClock,
   isAtBreak,
   isClockRunning,
+  matchHasStarted,
   matchPhase,
   nextExtraPeriod,
   nextRegularPeriod,
@@ -170,7 +171,10 @@ export function MatchClock({
   // prórroga que se podría AÑADIR (null si no procede).
   const regularNext = nextRegularPeriod(periods, periodCount);
   const extraNext = nextExtraPeriod(periods, periodCount);
-  const hasStarted = periods.length > 0 && status !== 'not_started';
+  // La MISMA pregunta que hace la app (core `matchHasStarted`). Estaba escrita a
+  // mano aquí y de otra forma allí —`status === 'not_started'`—, y con un partido
+  // en `live` sin periodos esta pantalla ofrecía arrancar y la del móvil no.
+  const hasStarted = matchHasStarted(periods, status);
   // En un periodo (corriendo o en pausa, sin terminar) vs en una pausa de
   // decisión (periodo terminado y reloj parado).
   const inPeriod = hasStarted && status === 'live' && cur != null && !cur.ended;

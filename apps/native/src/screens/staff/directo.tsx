@@ -17,6 +17,7 @@ import {
   getMatchDetailFromClient,
   isAtBreak,
   isClockRunning,
+  matchHasStarted,
   matchPhase,
   mergeLiveEvents,
   nextPeriodAfter,
@@ -224,6 +225,13 @@ export function DirectoControlScreen({ eventId }: { eventId: string | null }) {
   const atBreak = isAtBreak(periods, cuantos);
   const next = nextPeriodAfter(periods, cuantos);
   const canFinish = canFinishMatch(periods, cuantos);
+  // ¿Ha empezado DE VERDAD? La pregunta es de core (`matchHasStarted`) y la hacen
+  // las dos pantallas que controlan un partido, esta y la de la web. Antes aquí se
+  // miraba `status === 'not_started'` a secas, y un partido en `live` sin periodos
+  // —un arranque que se quedó a medias— dejaba la tarjeta del reloj con su título
+  // y NADA debajo: ni empezar, ni pausar, ni finalizar, ni el enlace a la carga del
+  // acta (que se esconde en vivo). Sin salida, y en el móvil del entrenador.
+  const haEmpezado = matchHasStarted(periods, status);
   const ref = { event_id: eventId };
 
   // Reloj/fase (matchPhase, tick local en vivo).
@@ -411,7 +419,11 @@ export function DirectoControlScreen({ eventId }: { eventId: string | null }) {
             {t('directo_control.clock')}
           </Text>
 
-          {status === 'not_started' ? (
+          {/* ARRANCAR. `status !== 'closed'` va delante porque un partido cerrado no
+              se arranca, se REABRE (su botón está más abajo); y el mismo pulsador
+              repara el atasco, porque `startMatchFromClient` es idempotente: con el
+              estado ya en `live` congela el once que falte y crea la 1ª parte. */}
+          {status !== 'closed' && !haEmpezado ? (
             <Btn
               label={t('directo_control.start_match')}
               accent={accent}
@@ -526,9 +538,13 @@ export function DirectoControlScreen({ eventId }: { eventId: string | null }) {
           ) : null}
         </View>
 
-        {/* O2-9b — ENTRADA RÁPIDA de eventos (solo con el partido EN VIVO). Registra
-            optimista + persistente; offline queda en la cola y sube al reconectar. */}
-        {isLive && canRecord ? (
+        {/* O2-9b — ENTRADA RÁPIDA de eventos (solo con el partido EN JUEGO). Registra
+            optimista + persistente; offline queda en la cola y sube al reconectar.
+            Pide `haEmpezado` además de `isLive`, y no por simetría: sin periodos,
+            `playerEventClockFields` devuelve 0 segundos y cae de vuelta en
+            'first_half', así que un gol apuntado en un partido atascado se habría
+            guardado en el minuto 0 de una parte que no existe. No falla: MIENTE. */}
+        {isLive && haEmpezado && canRecord ? (
           <QuickEntry
             fieldPlayers={detail.fieldPlayers}
             roster={roster}

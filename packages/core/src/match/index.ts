@@ -144,7 +144,7 @@ export type {
   ConsolidationInput,
 } from './consolidation';
 
-export { matchPhase, phaseShowsMinute } from './phase';
+export { matchPhase, matchHasStarted, phaseShowsMinute } from './phase';
 export type { MatchStatus, MatchPhaseKind, MatchPhaseInput, MatchPhaseResult } from './phase';
 export * from './week-matches';
 export * from './staff-matches';

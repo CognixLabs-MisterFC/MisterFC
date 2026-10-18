@@ -6,6 +6,7 @@ import {
   eventScopedCacheKey,
   getLineupForEventFromClient,
   getMatchDetailFromClient,
+  matchHasStarted,
   prepareMatchSheetFromClient,
   reconsolidateMatchFromClient,
   userCanRecordMatchFromClient,
@@ -131,7 +132,11 @@ export function CargaActaScreen({ eventId }: { eventId: string | null }) {
   const canRecord = !!data?.canRecord;
   const roster = data?.roster ?? [];
   const eventos = detail.events;
-  const necesitaPreparar = detail.status === 'not_started' || detail.periods.length === 0;
+  // La TERCERA copia de la misma pregunta, y esta estaba bien: «sin empezar O sin
+  // periodos» es, por De Morgan, exactamente `!matchHasStarted`. Escrita así no se
+  // notaba que era la misma, y eso es justo lo que permitió que la del control del
+  // directo se desviara sin que nadie lo viese.
+  const necesitaPreparar = !matchHasStarted(detail.periods, detail.status);
   const puedeEscribir = canRecord && online && !busy;
 
   // El minuto que propone: el ÚLTIMO metido. Así se lee un acta, de arriba abajo.
