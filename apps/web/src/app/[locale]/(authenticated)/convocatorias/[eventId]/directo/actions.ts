@@ -39,11 +39,10 @@ import {
   updateMatchEventActorFromClient,
   updateMatchEventMinuteFromClient,
   deleteMatchEventSchema,
-  DEFAULT_REGIME,
-  deriveExpelledPlayers,
-  deriveSquad,
+  deriveLiveSquad,
+  getLiveSquadInputsFromClient,
+  getSubstitutionRegimeFromClient,
   type FieldPlayerPos,
-  type FieldSlot,
   formationsForFormat,
   getFormation,
   type Json,
@@ -70,7 +69,6 @@ import {
   type SubstitutionRegime,
   setAbsenceSchema,
   setMatchNotesSchema,
-  type Sub,
   type TeamFormat,
   updateEventActorSchema,
   updateEventMinuteSchema,
@@ -503,103 +501,16 @@ async function loadPlayerOwnEventTypes(
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function loadLiveSquad(supabase: Supa, eventId: string) {
-  // Huecos del campo + suplentes: de la alineación OFICIAL.
-  const { data: official } = await supabase
-    .from('lineups')
-    .select('id')
-    .eq('event_id', eventId)
-    .eq('is_official', true)
-    .maybeSingle();
-  const slots: FieldSlot[] = [];
-  const bench: string[] = [];
-  if (official?.id) {
-    const { data: positions } = await supabase
-      .from('lineup_positions')
-      .select('player_id, position_code, x_pct, y_pct, location')
-      .eq('lineup_id', official.id as string);
-    for (const p of positions ?? []) {
-      if (p.location === 'field') {
-        slots.push({
-          playerId: p.player_id as string,
-          positionCode: (p.position_code as string | null) ?? null,
-          xPct: p.x_pct == null ? null : Number(p.x_pct),
-          yPct: p.y_pct == null ? null : Number(p.y_pct),
-        });
-      } else if (p.location === 'bench') {
-        bench.push(p.player_id as string);
-      }
-    }
-  }
-
-  // Sustituciones (orden cronológico) + tarjetas (expulsión) + ausencias.
-  const { data: ownEvents } = await supabase
-    .from('match_events')
-    .select('type, player_id, related_player_id, clock_seconds')
-    .eq('event_id', eventId)
-    .eq('side', 'own')
-    .order('clock_seconds', { ascending: true });
-  const subs: Sub[] = [];
-  const cardTypesByPlayer: { type: string; playerId: string | null }[] = [];
-  for (const e of ownEvents ?? []) {
-    if (e.type === 'substitution' && e.player_id && e.related_player_id) {
-      subs.push({ out: e.player_id as string, in: e.related_player_id as string });
-    } else if (e.type === 'yellow_card' || e.type === 'red_card') {
-      cardTypesByPlayer.push({ type: e.type as string, playerId: e.player_id as string | null });
-    }
-  }
-  const expelled = deriveExpelledPlayers(cardTypesByPlayer);
-
-  const { data: absRows } = await supabase
-    .from('match_absences')
-    .select('player_id')
-    .eq('event_id', eventId);
-  const absent = (absRows ?? []).map((r) => r.player_id as string);
-
-  // F7.6c — la elegibilidad del que ENTRA (reentrada) depende del RÉGIMEN de
-  // cambios de (categoría, división) del equipo.
-  const regime = await loadRegime(supabase, eventId);
-
-  return deriveSquad({
-    slots,
-    bench,
-    subs,
-    expelled,
-    absent,
-    allowReentry: regime.allowReentry,
-  });
+  return deriveLiveSquad(await getLiveSquadInputsFromClient(supabase, eventId));
 }
 
 /**
- * F7.6c — régimen de cambios del equipo del partido, resuelto desde
- * (categories.kind, teams.division) contra la tabla `substitution_regimes`.
- * Si no hay fila (categoría sin divisiones cargadas, o `division` nula) →
- * DEFAULT_REGIME, que es el RESTRICTIVO (7 sin reentrada): un hueco en los datos de
- * referencia no puede regalar cambios ilimitados en silencio.
+ * F7.6c — régimen de cambios del equipo del partido. La resolución (categoría +
+ * división → `substitution_regimes`, con el DEFAULT restrictivo cuando falta la
+ * fila) vive en core desde que la app necesitó el mismo once vivo.
  */
 async function loadRegime(supabase: Supa, eventId: string): Promise<SubstitutionRegime> {
-  const { data } = await supabase
-    .from('events')
-    .select('teams!inner(division, categories!inner(kind))')
-    .eq('id', eventId)
-    .maybeSingle();
-  type Shape = { teams: { division: string | null; categories: { kind: string | null } } } | null;
-  const team = (data as unknown as Shape)?.teams;
-  const kind = team?.categories?.kind ?? null;
-  const division = team?.division ?? null;
-  if (!kind || !division) return DEFAULT_REGIME;
-
-  const { data: row } = await supabase
-    .from('substitution_regimes')
-    .select('regime_type, max_subs, allow_reentry')
-    .eq('category_kind', kind)
-    .eq('division', division)
-    .maybeSingle();
-  if (!row) return DEFAULT_REGIME;
-  return {
-    type: row.regime_type as SubstitutionRegime['type'],
-    maxSubs: (row.max_subs as number | null) ?? null,
-    allowReentry: row.allow_reentry as boolean,
-  };
+  return getSubstitutionRegimeFromClient(supabase, eventId);
 }
 
 /** Nº de sustituciones ya registradas del equipo (desde match_events, §7.6c). */

@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
-import type { DetailFieldPlayer, LineupRosterPlayer, QuickEntryInput } from '@misterfc/core';
+import type { LineupRosterPlayer, QuickEntryInput } from '@misterfc/core';
 import { useTranslations } from '@/locale/provider';
 
 /**
@@ -21,18 +21,32 @@ import { useTranslations } from '@/locale/provider';
  * El último toque CONFIRMA (no hay botón extra en los de un actor): el evento se
  * registra al instante (optimista + cola). No decide red ni gate: eso lo llevan el
  * hook de cola (offline) y la RLS (al subir). Aquí solo se ELIGE qué pasó.
+ *
+ * QUIÉN SALE EN CADA LISTA NO SE DECIDE AQUÍ, y antes sí: esta pantalla recibía los
+ * titulares de la alineación oficial y restaba para sacar el banquillo. Después del
+ * primer cambio eso ya era falso —el que acababa de salir seguía ofreciéndose para
+ * salir, el que entró no se podía sacar, y la reentrada no la miraba nadie—, y un
+ * cambio apuntado sobre quien no era reparte mal los minutos de todo el equipo.
+ * Ahora las dos listas llegan hechas desde `deriveSquad` (core), que conoce las
+ * sustituciones, las expulsiones, las ausencias y el régimen de la categoría.
  */
 type Mode = null | 'goal' | 'yellow_card' | 'red_card' | 'sub' | 'rival' | 'own_goal';
 
+/** Un jugador tal y como se pinta en un chip: con lo justo para tocarlo. */
+export type ActorChip = { id: string; label: string; dorsal: number | null };
+
 export function QuickEntry({
-  fieldPlayers,
-  roster,
+  enCampo,
+  puedenEntrar,
   accent,
   disabled,
   onRegister,
 }: {
-  fieldPlayers: DetailFieldPlayer[];
-  roster: LineupRosterPlayer[];
+  /** Quién está en el campo AHORA (ocupantes de los huecos), ya resuelto por core. */
+  enCampo: ActorChip[];
+  /** Quién puede ENTRAR ahora: suplentes sin estrenar y, si el régimen lo permite,
+   *  los que ya salieron. Los expulsados y los ausentes no están en ninguna lista. */
+  puedenEntrar: ActorChip[];
   accent: string;
   disabled: boolean;
   onRegister: (input: QuickEntryInput) => void;
@@ -41,13 +55,6 @@ export function QuickEntry({
   const [mode, setMode] = useState<Mode>(null);
   const [subOut, setSubOut] = useState<string | null>(null);
   const [dorsal, setDorsal] = useState('');
-
-  const onFieldIds = useMemo(() => new Set(fieldPlayers.map((p) => p.playerId)), [fieldPlayers]);
-  // Banquillo elegible a ENTRAR = roster que no está en el campo ahora mismo.
-  const bench = useMemo(
-    () => roster.filter((r) => !onFieldIds.has(r.playerId)),
-    [roster, onFieldIds],
-  );
 
   const reset = () => {
     setMode(null);
@@ -139,7 +146,7 @@ export function QuickEntry({
       {mode === 'goal' || mode === 'own_goal' || mode === 'yellow_card' || mode === 'red_card' ? (
         <ActorGrid
           title={t('directo_entry.pick_player')}
-          players={fieldPlayers.map((p) => ({ id: p.playerId, label: p.label, dorsal: p.dorsal }))}
+          players={enCampo}
           onPick={pickPlayer}
           accent={accent}
           empty={t('directo_entry.no_field_players')}
@@ -149,14 +156,7 @@ export function QuickEntry({
       {mode === 'sub' ? (
         <ActorGrid
           title={subOut ? t('directo_entry.pick_in') : t('directo_entry.pick_out')}
-          players={(subOut
-            ? bench.map((r) => rosterChip(r, t))
-            : fieldPlayers.map((p) => ({
-                id: p.playerId,
-                label: p.label,
-                dorsal: p.dorsal,
-              }))
-          ).filter((p) => p.id !== subOut)}
+          players={(subOut ? puedenEntrar : enCampo).filter((p) => p.id !== subOut)}
           onPick={pickSub}
           accent={accent}
           empty={subOut ? t('directo_entry.no_bench') : t('directo_entry.no_field_players')}
