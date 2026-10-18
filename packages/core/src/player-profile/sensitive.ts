@@ -101,23 +101,75 @@ export type PlayerMedical = {
   emergency_contact: string | null;
 };
 
-export async function getPlayerMedicalFromClient(
+/**
+ * Lo que devuelve LEER la médica, con los tres estados separados.
+ *
+ * `get_player_medical` responde de tres maneras distintas y dos de ellas se
+ * parecen demasiado:
+ *
+ *   · lanza `forbidden`  → quien mira no pasa la puerta (no es staff del equipo
+ *                          del crío, o el consentimiento de salud está retirado),
+ *   · devuelve 0 filas   → sí pasa, pero no hay NADA apuntado (o el jugador está
+ *                          suprimido, que para quien pinta es lo mismo: no hay),
+ *   · devuelve la fila.
+ *
+ * Aplanar las dos primeras en `null` —que es lo que hacía la única lectura que
+ * había— está bien para la pantalla de la FAMILIA, donde quien mira es el tutor y
+ * la puerta se le abre siempre. Para el cuerpo técnico no: ahí «no hay alergias
+ * apuntadas» y «no tienes acceso a esto» son frases distintas, y la primera dicha
+ * en el sitio de la segunda es la que hace que un entrenador se quede tranquilo.
+ *
+ * Y tiene un segundo efecto, el que de verdad importa: `forbidden` es un
+ * RESULTADO, no un fallo, así que al caller le llega y puede guardarlo. En la app,
+ * donde la ficha se cachea en el almacén cifrado para poder leerla sin cobertura,
+ * eso significa que el día que se retira el consentimiento la copia que había en
+ * el móvil del entrenador se SUSTITUYE por el `forbidden` en cuanto el teléfono
+ * vuelve a tener red. Con `null` se habría guardado un hueco igual de anónimo.
+ */
+export type PlayerMedicalResult =
+  | { ok: true; medical: PlayerMedical | null }
+  | { ok: false; reason: 'forbidden' | 'error' };
+
+export async function readPlayerMedicalFromClient(
   supabase: DbClient,
   playerId: string,
-): Promise<PlayerMedical | null> {
-  const { data } = await supabase.rpc('get_player_medical', {
+): Promise<PlayerMedicalResult> {
+  const { data, error } = await supabase.rpc('get_player_medical', {
     p_player_id: playerId,
     p_ip: undefined,
     p_user_agent: undefined,
   });
+  if (error) {
+    const msg = (error.message ?? '').toLowerCase();
+    return { ok: false, reason: msg.includes('forbidden') ? 'forbidden' : 'error' };
+  }
   const row = data?.[0];
-  if (!row) return null;
+  if (!row) return { ok: true, medical: null };
   return {
-    allergies: row.allergies ?? null,
-    medication: row.medication ?? null,
-    medical_conditions: row.medical_conditions ?? null,
-    emergency_contact: row.emergency_contact ?? null,
+    ok: true,
+    medical: {
+      allergies: row.allergies ?? null,
+      medication: row.medication ?? null,
+      medical_conditions: row.medical_conditions ?? null,
+      emergency_contact: row.emergency_contact ?? null,
+    },
   };
+}
+
+/**
+ * La misma lectura, aplanada a «la fila o nada». La usan las dos superficies de
+ * GESTIÓN (la de familia en la app y la de la web), donde quien mira gestiona al
+ * jugador y un `forbidden` solo puede venir del consentimiento retirado, que esas
+ * pantallas ya saben por otro lado (`canWriteMedical`).
+ *
+ * No repite la llamada: delega. Una sola RPC invocada desde un solo sitio.
+ */
+export async function getPlayerMedicalFromClient(
+  supabase: DbClient,
+  playerId: string,
+): Promise<PlayerMedical | null> {
+  const r = await readPlayerMedicalFromClient(supabase, playerId);
+  return r.ok ? r.medical : null;
 }
 
 /** Normaliza un campo médico igual que el web (trim, vacío → null, tope 2000). */

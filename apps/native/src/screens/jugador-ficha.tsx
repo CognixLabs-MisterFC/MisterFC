@@ -13,6 +13,13 @@ import {
 import { tutorContactRows } from '@/player-contact/tutor-rows';
 import { loadFichaBadges } from '@/player-ficha/badges';
 import {
+  loadFichaMedical,
+  loadFichaNotes,
+  type FichaMedical,
+  type FichaNotes,
+} from '@/player-ficha/staff-reads';
+import { FichaMedicalSection, FichaNotesSection } from '@/player-ficha/staff-sections';
+import {
   FichaAttendance,
   FichaBadges,
   FichaCareer,
@@ -46,8 +53,15 @@ import { BRAND } from '@/theme';
  * NADA de edición: eso es web.
  *
  * LO QUE AÑADE sobre "Mi ficha": el CONTACTO (teléfono del niño y de sus tutores,
- * pulsables) y el desglose por tipo de partido. Lo que todavía NO trae: la médica
- * y las notas del cuerpo técnico, que son lecturas nuevas y van en su pieza.
+ * pulsables), el desglose por tipo de partido y las dos superficies RESERVADAS —la
+ * médica y las notas del cuerpo técnico—, cada una con su puerta en el servidor.
+ *
+ * Esas dos no las abre el rango sino el EQUIPO, y por eso dos personas con la misma
+ * pantalla delante pueden ver cosas distintas sin que aquí haya un solo `if` de rol:
+ * la médica pide ser staff del equipo del crío (o dirección) Y consentimiento de
+ * salud vigente, y queda apuntada en `audit_log`; las notas piden ser cuerpo técnico
+ * ACTUAL del jugador. Quien no pasa no ve el bloque — y no se le dice que esté
+ * vacío, que es distinto.
  */
 export function JugadorFichaScreen() {
   const t = useTranslations('');
@@ -80,6 +94,26 @@ export function JugadorFichaScreen() {
   const { data: badges } = useCached<Badge[]>(
     playerScopedCacheKey('ficha-staff-badges', clubId ?? 'none', playerId ?? 'none'),
     (sb) => loadFichaBadges(sb, playerId ?? null, clubId),
+  );
+
+  // Médica y notas: lecturas RESERVADAS, cada una en su clave y separadas de la
+  // ficha. Separadas porque sus permisos son otros —un entrenador puede tener la
+  // ficha entera y ninguna de las dos—, y que una de ellas diga que no no puede
+  // dejar la ficha sin pintar.
+  //
+  // La clave NO es `medical`: esa es la de la pantalla de gestión de familia, que
+  // guarda otra forma (la fila pelada) bajo el mismo jugador. Dos lecturas
+  // distintas compartiendo clave se leen la una a la otra.
+  //
+  // `loading` viaja hasta el bloque: sin él, «todavía no ha llegado» y «no se ha
+  // podido leer» son el mismo null y el aviso saldría en cada carga.
+  const medica = useCached<FichaMedical>(
+    playerScopedCacheKey('ficha-staff-medica', clubId ?? 'none', playerId ?? 'none'),
+    (sb) => loadFichaMedical(sb, playerId ?? null),
+  );
+  const notas = useCached<FichaNotes>(
+    playerScopedCacheKey('ficha-staff-notas', clubId ?? 'none', playerId ?? 'none'),
+    (sb) => loadFichaNotes(sb, playerId ?? null),
   );
 
   if (loading) return <LoadingScreen />;
@@ -117,6 +151,12 @@ export function JugadorFichaScreen() {
         />
 
         <ContactSection contact={contact} t={t} accent={accent} />
+
+        {/* La médica va ARRIBA del todo, pegada al contacto: las dos son las que se
+            miran con prisa. Lo demás de la ficha es para mirarlo con calma. */}
+        <FichaMedicalSection value={medica.data} loading={medica.loading} t={t} />
+
+        <FichaNotesSection value={notas.data} loading={notas.loading} t={t} />
 
         <FichaBadges badges={badges} title={t('badges.title')} t={t} accent={accent} />
 

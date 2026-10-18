@@ -5239,6 +5239,8 @@
     "evaluations": "Ratings",
     "contact": "Contact",
     "contact_unavailable": "We couldn't load the contact details.",
+    "medical_unavailable": "We couldn't load the medical data.",
+    "notes_unavailable": "We couldn't load the notes.",
     "contact_player_phone": "Player's phone number",
     "contact_email": "Email",
     "contact_phone": "Phone",
