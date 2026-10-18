@@ -298,6 +298,12 @@ const STAFF_HIDDEN: MenuDef[] = [
   // sesión). Se alcanzan desde las tarjetas de tarea del inicio; href:null.
   { name: 'entrenos-sin-lista', labelKey: 'nav.asistencia' },
   { name: 'entrenos-sin-sesion', labelKey: 'nav.sesion_del_dia' },
+  // Ficha de un jugador (?playerId&name), alcanzada tocando un nombre en la
+  // plantilla del equipo o en la lista del coordinador. La MISMA pantalla que
+  // monta dirección; aquí hace falta su propio fichero de ruta porque un
+  // entrenador no puede entrar en el área de dirección. href:null o saldría como
+  // una pestaña más de la barra.
+  { name: 'jugador', labelKey: 'nav.jugadores' },
 ];
 
 const DIRECTION_MENU: MenuDef[] = [

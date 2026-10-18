@@ -1,4 +1,5 @@
-import { ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import {
   getTeamRosterStatsFromClient,
   getTeamPlayersWithoutAppFromClient,
@@ -29,6 +30,7 @@ import { useTranslations } from '@/locale/provider';
 export function JugadoresConsultaScreen() {
   const t = useTranslations('');
   const { activeClub } = useApp();
+  const router = useRouter();
   const { loading: teamLoading, activeTeam } = useActiveStaffTeam();
   const clubId = activeClub?.club.id ?? null;
   const teamId = activeTeam?.teamId ?? null;
@@ -63,17 +65,26 @@ export function JugadoresConsultaScreen() {
           <View className="rounded-2xl border border-zinc-200">
             {roster.map((p, i) => {
               const noApp = noAppIds.has(p.player_id);
+              const nombre = formatPlayerName(p.first_name, p.last_name);
               return (
-                <View
+                // Tocar el nombre abre la FICHA del jugador, la misma que monta
+                // dirección. Quién ve qué dentro lo recorta la RLS, no el área.
+                <Pressable
                   key={p.player_id}
-                  className={`flex-row items-center gap-3 px-4 py-2.5 ${i > 0 ? 'border-t border-zinc-100' : ''}`}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/staff/jugador',
+                      params: { playerId: p.player_id, name: nombre },
+                    })
+                  }
+                  className={`flex-row items-center gap-3 px-4 py-2.5 active:opacity-60 ${i > 0 ? 'border-t border-zinc-100' : ''}`}
                 >
                   <Text className="w-7 text-right text-sm font-bold text-zinc-400 tabular-nums">
                     {p.dorsal ?? '—'}
                   </Text>
                   <View className="min-w-0 flex-1">
                     <Text className="text-sm text-[#0F1B2E]" numberOfLines={1}>
-                      {formatPlayerName(p.first_name, p.last_name)}
+                      {nombre}
                     </Text>
                     {noApp ? (
                       <NoAppBadge
@@ -87,7 +98,7 @@ export function JugadoresConsultaScreen() {
                       {t(`jugadores.positions.${p.position}`)}
                     </Text>
                   ) : null}
-                </View>
+                </Pressable>
               );
             })}
           </View>
