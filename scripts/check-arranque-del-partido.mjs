@@ -43,10 +43,23 @@ const ARBOLES = ['apps/web/src', 'apps/native/src'];
  * precisamente la que tenía el fallo. Lo cazó el control positivo de abajo.
  */
 const ARRANCA = /\b(startMatch(FromClient)?|prepareMatchSheet(FromClient)?)\b/;
-/** La pregunta compartida. */
-const PREGUNTA = /\bmatchHasStarted\b/;
-/** Decidir por la COLUMNA: la copia que se desincronizó. */
-const POR_LA_COLUMNA = /status\s*[!=]==\s*'not_started'/;
+/**
+ * La pregunta compartida, LLAMADA. El paréntesis no es un detalle de estilo: con
+ * `/\bmatchHasStarted\b/` a secas, el `import { matchHasStarted }` ya satisfacía
+ * la comprobación, y al revertir una pantalla a su condición escrita a mano el
+ * guard seguía verde. Es la tercera vez en dos días que una afirmación de que algo
+ * SE USA se cumple con que el nombre APAREZCA (la anterior, el test de la ficha en
+ * #826). Medido: con esta línea en su versión floja, la mutación de la entrada
+ * rápida de la web pasaba.
+ */
+const PREGUNTA = /\bmatchHasStarted\s*\(/;
+/**
+ * Decidir por la COLUMNA: la copia que se desincronizó. El nombre de la variable
+ * cambia por pantalla —`status` en unas, `matchStatus` en la entrada rápida de la
+ * web—, así que el patrón admite prefijo y no distingue mayúsculas en la S. Sin
+ * eso, la mitad de los sitios podían volver a la mano sin que esto se enterara.
+ */
+const POR_LA_COLUMNA = /\b\w*[Ss]tatus\s*[!=]==\s*'not_started'/;
 
 /**
  * Los COMENTARIOS fuera antes de buscar nada.
