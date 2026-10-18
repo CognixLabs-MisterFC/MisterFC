@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Linking, ScrollView, Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import {
@@ -5,33 +6,61 @@ import {
   getPlayerContactFromClient,
   playerScopedCacheKey,
   formatPlayerName,
+  type Badge,
   type PlayerFicha,
   type PlayerContactResult,
 } from '@misterfc/core';
 import { tutorContactRows } from '@/player-contact/tutor-rows';
+import { loadFichaBadges } from '@/player-ficha/badges';
+import {
+  FichaAttendance,
+  FichaBadges,
+  FichaCareer,
+  FichaEvaluations,
+  FichaStats,
+  Section,
+  SeasonChips,
+  identityLine,
+} from '@/player-ficha/sections';
 import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
+import { PlayerAvatar } from '@/ui/player-avatar';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
 import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 
 /**
- * O2-11a-2 — FICHA de un jugador (DIRECCIÓN, CLUB-WIDE, SOLO LECTURA). Reutiliza el
- * mismo read de core que "Mi ficha" de familia (`getPlayerFichaFromClient`: identidad
- * + stats + asistencia + valoraciones + carrera); aquí solo se pinta, con el playerId
- * del parámetro (sin selector de hijo — dirección no monta ActivePlayerProvider).
- * NADA de edición (es web). Caché player-scoped.
+ * FICHA de un jugador para el CUERPO TÉCNICO (SOLO LECTURA). La misma pantalla
+ * para dirección y para entrenadores: lo que cada uno puede ver no lo decide esta
+ * pantalla, lo decide la RLS, y ahí la diferencia no es el rango sino el EQUIPO
+ * (la médica es del staff del equipo del crío, no de quien tiene más galones).
+ *
+ * Vivía en `screens/direction/` y solo se llegaba desde el área de dirección, que
+ * es una puerta que a un entrenador no le abre (`isAllowedInArea`: direction→staff
+ * sí, staff→direction nunca). Por eso se mueve al nivel neutral de `screens/`,
+ * como `profile-screen`: la monta el fichero de ruta de cada área.
+ *
+ * Reutiliza el MISMO read de core que "Mi ficha" de familia
+ * (`getPlayerFichaFromClient`) y los mismos bloques de pintura
+ * (`player-ficha/sections`), con el playerId del parámetro — sin selector de hijo.
+ * NADA de edición: eso es web.
+ *
+ * LO QUE AÑADE sobre "Mi ficha": el CONTACTO (teléfono del niño y de sus tutores,
+ * pulsables) y el desglose por tipo de partido. Lo que todavía NO trae: la médica
+ * y las notas del cuerpo técnico, que son lecturas nuevas y van en su pieza.
  */
-export function DireccionJugadorFichaScreen() {
+export function JugadorFichaScreen() {
   const t = useTranslations('');
   const { activeClub, theme } = useApp();
   const { playerId, name } = useLocalSearchParams<{ playerId?: string; name?: string }>();
   const clubId = activeClub?.club.id ?? null;
   const accent = theme?.color ?? BRAND.navy;
+  const [season, setSeason] = useState<string | null>(null);
 
   const { data, fromCache, loading } = useCached<PlayerFicha | null>(
-    playerScopedCacheKey('dir-ficha', clubId ?? 'none', playerId ?? 'none'),
-    (sb) => (playerId ? getPlayerFichaFromClient(sb, playerId) : Promise.resolve(null)),
+    `${playerScopedCacheKey('ficha-staff', clubId ?? 'none', playerId ?? 'none')}.${season ?? 'def'}`,
+    (sb) =>
+      playerId ? getPlayerFichaFromClient(sb, playerId, { season }) : Promise.resolve(null),
   );
 
   // Contacto en una lectura APARTE, con su propia clave: son RPC (las columnas
@@ -39,11 +68,18 @@ export function DireccionJugadorFichaScreen() {
   // ficha si fallan. Sin ip/user-agent: en un móvil no hay cabeceras de
   // petición que valga la pena inventar; la RPC apunta igual quién ha mirado.
   const { data: contact } = useCached<PlayerContactResult>(
-    playerScopedCacheKey('dir-ficha-contacto', clubId ?? 'none', playerId ?? 'none'),
+    playerScopedCacheKey('ficha-staff-contacto', clubId ?? 'none', playerId ?? 'none'),
     (sb) =>
       playerId
         ? getPlayerContactFromClient(sb, playerId)
         : Promise.resolve({ ok: false, reason: 'error' } as PlayerContactResult),
+  );
+
+  // Logros: dos lecturas encadenadas, en su propia clave y SIN temporada (son
+  // siempre de la activa). Misma función que usa "Mi ficha".
+  const { data: badges } = useCached<Badge[]>(
+    playerScopedCacheKey('ficha-staff-badges', clubId ?? 'none', playerId ?? 'none'),
+    (sb) => loadFichaBadges(sb, playerId ?? null, clubId),
   );
 
   if (loading) return <LoadingScreen />;
@@ -51,72 +87,56 @@ export function DireccionJugadorFichaScreen() {
 
   const title =
     name ?? formatPlayerName(data.identity.firstName ?? '', data.identity.lastName);
-  const s = data.stats;
-  const att = data.attendance;
+  const initials =
+    (data.identity.firstName?.[0] ?? '') + (data.identity.lastName?.[0] ?? '');
 
   return (
     <View className="flex-1 bg-white">
       <OfflineBanner show={fromCache} />
       <ScrollView contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 32 }}>
-        <View>
-          <ScreenTitle>{title}</ScreenTitle>
-          <Text className="mt-0.5 text-xs text-zinc-400">
-            {[
-              data.identity.dorsal != null ? `#${data.identity.dorsal}` : null,
-              data.identity.positionMain
-                ? t(`jugadores.positions.${data.identity.positionMain}`)
-                : null,
-              data.identity.foot ? t(`jugadores.feet.${data.identity.foot}`) : null,
-            ]
-              .filter(Boolean)
-              .join(' · ')}
-          </Text>
+        <View className="flex-row items-center gap-3">
+          <PlayerAvatar
+            path={data.identity.photoPath}
+            initials={initials}
+            accent={accent}
+            size={56}
+          />
+          <View className="flex-1">
+            <ScreenTitle>{title}</ScreenTitle>
+            <Text className="mt-0.5 text-xs text-zinc-400">
+              {identityLine(data.identity, t)}
+            </Text>
+          </View>
         </View>
+
+        <SeasonChips
+          seasons={data.seasons}
+          active={data.activeSeason}
+          onPick={setSeason}
+          accent={accent}
+        />
 
         <ContactSection contact={contact} t={t} accent={accent} />
 
-        <Section title={`${t('ficha.stats')}${data.activeSeason ? ` · ${data.activeSeason}` : ''}`}>
-          <Grid
-            items={[
-              [t('ficha.matches'), String(s.matches)],
-              [t('ficha.starts'), String(s.starts)],
-              [t('ficha.minutes'), String(s.minutesPlayed)],
-              [t('ficha.goals'), String(s.goals)],
-              [t('ficha.assists'), String(s.assists)],
-              [t('ficha.shots'), String(s.shots)],
-              [t('ficha.yellow'), String(s.yellowCards)],
-              [t('ficha.red'), String(s.redCards)],
-            ]}
-          />
-        </Section>
+        <FichaBadges badges={badges} title={t('badges.title')} t={t} accent={accent} />
 
-        <Section title={t('ficha.attendance')}>
-          <View className="flex-row items-center justify-between">
-            <Text className="text-sm text-zinc-500">{t('ficha.attendance_pct')}</Text>
-            <Text className="text-lg font-bold text-[#0F1B2E]">
-              {att.presentPct == null ? '—' : `${Math.round(att.presentPct * 100)}%`}
-            </Text>
-          </View>
-        </Section>
+        <FichaStats
+          stats={data.stats}
+          ratios={data.ratios}
+          byType={data.statsByType}
+          title={`${t('ficha.stats')}${data.activeSeason ? ` · ${data.activeSeason}` : ''}`}
+          t={t}
+        />
 
-        {data.evaluations.length > 0 ? (
-          <Section title={t('ficha.evaluations')}>
-            {data.evaluations.map((e) => (
-              <View key={e.eventId} className="border-b border-zinc-100 py-2">
-                <View className="flex-row items-center justify-between">
-                  <Text className="flex-1 text-sm font-medium text-[#0F1B2E]" numberOfLines={1}>
-                    {e.label}
-                    {e.isMvp ? ' · MVP' : ''}
-                  </Text>
-                  <Text className="text-sm font-bold" style={{ color: accent }}>
-                    {e.rating != null ? e.rating.toFixed(1) : '—'}
-                  </Text>
-                </View>
-                {e.comment ? <Text className="mt-0.5 text-xs text-zinc-500">{e.comment}</Text> : null}
-              </View>
-            ))}
-          </Section>
-        ) : null}
+        <FichaAttendance attendance={data.attendance} title={t('ficha.attendance')} t={t} />
+
+        <FichaEvaluations
+          evaluations={data.evaluations}
+          title={t('ficha.evaluations')}
+          accent={accent}
+        />
+
+        <FichaCareer career={data.career} title={t('ficha.career')} t={t} />
       </ScrollView>
     </View>
   );
@@ -164,7 +184,7 @@ function ContactSection({
           CUENTA PROPIA del menor (relation='self'), que aquí salía como un tutor
           más con el correo del padre dentro. Se pasa por el mismo filtro que la
           pantalla de Familia de la app: tutores y nadie más. Quien mira es
-          dirección, nunca un tutor, así que no hay fila que marcar como suya. */}
+          cuerpo técnico, nunca un tutor, así que no hay fila que marcar como suya. */}
       {tutores.length === 0 ? (
         <Text className="mt-1 text-xs text-zinc-400">{t('ficha.contact_no_tutors')}</Text>
       ) : (
@@ -226,30 +246,6 @@ function Row({
       ) : (
         <Text className="text-sm text-zinc-400">{empty}</Text>
       )}
-    </View>
-  );
-}
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <View className="rounded-2xl border border-zinc-200 p-4">
-      <Text className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">{title}</Text>
-      {children}
-    </View>
-  );
-}
-
-function Grid({ items }: { items: [string, string][] }) {
-  return (
-    <View className="flex-row flex-wrap">
-      {items.map(([label, value]) => (
-        <View key={label} className="w-1/4 py-1.5">
-          <Text className="text-lg font-bold text-[#0F1B2E] tabular-nums">{value}</Text>
-          <Text className="text-[10px] text-zinc-400" numberOfLines={1}>
-            {label}
-          </Text>
-        </View>
-      ))}
     </View>
   );
 }

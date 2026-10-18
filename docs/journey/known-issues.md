@@ -80,6 +80,28 @@ en su propio PR.
   ejemplos, y el candado de la contraseña vive en ese fichero, así que no es un `git mv`
   a ciegas.
 
+### El CONTACTO de un jugador es club-wide para todo el cuerpo técnico (2026-10-18)
+
+`user_can_access_player_contact` (mig `20261067000000`) deja pasar a los CINCO roles de
+staff del club —admin, director, coordinador, principal y ayudante— **sin acotar por
+equipo**. O sea: un entrenador ayudante puede sacar el teléfono de la madre de un niño de
+otro equipo, y los correos de sus tutores.
+
+No es un agujero abierto a cualquiera —hay que ser staff del club— y **queda auditado**:
+la RPC escribe `contact.read` en `audit_log` cuando quien mira no es tutor. Pero es más
+ancho que su hermana: `user_can_access_player_medical` sí acota por EQUIPO (staff del
+equipo activo del jugador, o del que lo promociona ese día) y además exige
+consentimiento.
+
+Se vio al censar la ficha del jugador para la app (2026-10-18). Sube de importancia ahora
+que la ficha está **a un toque** desde la plantilla, en vez de escondida en el área de
+dirección: más gente la va a abrir.
+
+**Si se acota**, lo que hay que mirar antes es a quién rompe: el coordinador que no está
+en `team_staff` de ningún equipo deja de ver cualquier contacto, y el secretario técnico
+que llama a una familia de otra categoría también. Es una pieza de base de datos con su
+pgTAP, no un cambio de pantalla.
+
 ### El repo no pasa `pnpm format:check`
 - **Detectado en**: 2026-05-28 (PR de `feat/auth-email-password`). **Medido otra vez el
   2026-10-07: sigue igual y a mayor escala — 884 ficheros** con diferencias de formato.
