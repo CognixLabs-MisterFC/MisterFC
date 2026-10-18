@@ -6,6 +6,7 @@
     "build": {
       "dependsOn": ["^build"],
       "env": ["MARKETING_SITE", "VERCEL_ENV"],
+      "passThroughEnv": ["SENTRY_AUTH_TOKEN", "SENTRY_ORG", "SENTRY_PROJECT"],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
     "lint": {
