@@ -290,6 +290,10 @@ export function DirectoControlScreen({ eventId }: { eventId: string | null }) {
           ? `#${r.rival_dorsal}`
           : nameById.get(r.player_id ?? '') || t('directo_entry.player'),
       ownGoal: autogol,
+      // El resultado del penalti viaja con la fila encolada: `computeScore` cuenta
+      // un penalti solo si está marcado, y este marcador se re-deriva de estas
+      // filas. Sin esto, el gol de penalti no aparecería hasta que subiera.
+      outcome: r.metadata.outcome ?? null,
       clockSeconds: r.clock_seconds,
       displayMinute: r.display_minute,
       period: r.period as PeriodKind,
@@ -626,6 +630,13 @@ export function DirectoControlScreen({ eventId }: { eventId: string | null }) {
             accent={accent}
             disabled={false}
             onRegister={onRegister}
+            // SEGUNDO PISO: el formulario de los diez tipos, arrancando en el
+            // minuto que marca el reloj ahora mismo — que es el minuto que el
+            // entrenador tiene en la cabeza cuando lo abre.
+            onMore={() => {
+              setEditError(null);
+              setAdding(minute);
+            }}
           />
         ) : null}
 

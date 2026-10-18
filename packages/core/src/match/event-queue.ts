@@ -29,6 +29,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../supabase/types';
 import { playerEventClockFields } from './event';
 import type { ClockPeriod } from './clock';
+import type { PenaltyOutcome } from './score';
 
 type DbClient = SupabaseClient<Database>;
 
@@ -57,7 +58,13 @@ export interface QueuedMatchEventRow {
   period: string;
   clock_seconds: number;
   display_minute: number;
-  metadata: Record<string, never>;
+  /**
+   * Metadatos por tipo. Hoy solo el `outcome` del PENALTI (marcado/parado/fuera),
+   * que es lo único que la entrada rápida necesita guardar aparte del actor — y
+   * que además decide el marcador: `isMatchGoal` cuenta un penalti solo si está
+   * marcado. Era `Record<string, never>` cuando la paleta no tenía penaltis.
+   */
+  metadata: { outcome?: PenaltyOutcome };
 }
 
 /**
@@ -74,7 +81,16 @@ export type QuickEntryInput =
   | { kind: 'card'; card: 'yellow_card' | 'red_card'; playerId: string }
   | { kind: 'substitution'; playerOutId: string; playerInId: string }
   | { kind: 'rival_goal'; dorsal: number }
-  | { kind: 'own_goal'; playerId: string };
+  | { kind: 'own_goal'; playerId: string }
+  /**
+   * PENALTI propio. Lleva `outcome` obligatorio y no por rigor de esquema: un
+   * penalti marcado ES un gol en el marcador (`isMatchGoal`), y uno parado no lo
+   * es. Sin el resultado, la fila no se podría contar ni en un sentido ni en otro.
+   * El del RIVAL no está aquí: un penalti del rival que entra es, para el
+   * marcador, un gol del rival, y para eso ya está `rival_goal`; el detalle se
+   * añade desde el formulario de los diez tipos.
+   */
+  | { kind: 'penalty'; playerId: string; outcome: PenaltyOutcome };
 
 /** Contexto para construir la fila COMPLETA en el instante del toque. */
 export interface BuildEventContext {
@@ -133,6 +149,14 @@ export function buildMatchEventRow(
     // AUTOGOL: gol del RIVAL en el marcador (side) con autor NUESTRO (player_id) y
     // sin dorsal. La forma la permite el CHECK `actor_by_side` desde la mig
     // 20261128000000, y solo para `goal`; `isOwnGoal` (core) es quien la reconoce.
+    case 'penalty':
+      return {
+        ...base,
+        side: 'own',
+        type: 'penalty',
+        player_id: input.playerId,
+        metadata: { outcome: input.outcome },
+      };
     case 'own_goal':
       return { ...base, side: 'rival', type: 'goal', player_id: input.playerId };
   }

@@ -19,6 +19,7 @@ import {
   type EventQueue,
   type QueuedMatchEventRow,
 } from '../event-queue';
+import { computeScore } from '../score';
 import type { ClockPeriod } from '../clock';
 import type { Database } from '../../supabase/types';
 
@@ -160,6 +161,57 @@ describe('buildMatchEventRow (fila completa en el instante del toque)', () => {
     const a = buildMatchEventRow({ kind: 'player_goal', playerId: P1 }, ctx(uid(1)));
     const b = buildMatchEventRow({ kind: 'player_goal', playerId: P1 }, ctx(uid(1)));
     expect(a).toEqual(b);
+  });
+
+  // ── PENALTI ───────────────────────────────────────────────────────────────
+  // Sube a la paleta en vivo porque cambia el marcador y hay que apuntarlo en el
+  // momento. Lo que lo hace distinto de un gol es que no se puede registrar sin el
+  // RESULTADO: `isMatchGoal` cuenta el penalti solo si está marcado, así que una
+  // fila sin `outcome` no se podría contar ni en un sentido ni en otro.
+  it('el penalti propio lleva su resultado en metadata', () => {
+    const row = buildMatchEventRow(
+      { kind: 'penalty', playerId: P1, outcome: 'scored' },
+      ctx(uid(8)),
+    );
+    expect(row).toMatchObject({
+      side: 'own',
+      type: 'penalty',
+      player_id: P1,
+      rival_dorsal: null,
+      metadata: { outcome: 'scored' },
+    });
+  });
+
+  it('un penalti MARCADO suma al marcador y uno parado no', () => {
+    const marcado = buildMatchEventRow(
+      { kind: 'penalty', playerId: P1, outcome: 'scored' },
+      ctx(uid(9)),
+    );
+    const parado = buildMatchEventRow(
+      { kind: 'penalty', playerId: P1, outcome: 'saved' },
+      ctx(uid(10)),
+    );
+    // Se proyecta como lo hace la pantalla: side + type + outcome.
+    expect(computeScore([{ side: marcado.side, type: marcado.type, outcome: 'scored' }])).toEqual({
+      own: 1,
+      rival: 0,
+    });
+    expect(computeScore([{ side: parado.side, type: parado.type, outcome: 'saved' }])).toEqual({
+      own: 0,
+      rival: 0,
+    });
+  });
+
+  // El resultado tiene que SOBREVIVIR el viaje por la cola: la fila se guarda en
+  // el almacén cifrado y se sube tal cual. Si `metadata` se perdiera al
+  // serializar, el penalti llegaría al servidor sin resultado y dejaría de contar.
+  it('el resultado sobrevive a serializar la fila (la cola la guarda en JSON)', () => {
+    const row = buildMatchEventRow(
+      { kind: 'penalty', playerId: P1, outcome: 'missed' },
+      ctx(uid(11)),
+    );
+    expect(JSON.parse(JSON.stringify(row))).toEqual(row);
+    expect(JSON.parse(JSON.stringify(row)).metadata.outcome).toBe('missed');
   });
 });
 
