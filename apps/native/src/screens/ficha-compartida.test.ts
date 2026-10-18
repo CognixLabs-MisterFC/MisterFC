@@ -118,8 +118,13 @@ describe('las dos superficies RESERVADAS de la ficha', () => {
   // monta la ficha de staff, que es la que las dos áreas de staff abren. Si uno de
   // estos componentes aparece en un tercer fichero, hay que mirar cuál es.
   it.each(['FichaMedicalSection', 'FichaNotesSection'])(
-    '«%s» solo existe en el módulo reservado y en la ficha de staff',
+    '«%s» se MONTA en la ficha de staff y no existe fuera del módulo reservado',
     (componente) => {
+      // Las dos mitades hacen falta, y lo sé porque la primera sola no bastó: al
+      // borrar el bloque del render dejando el import, el fichero seguía
+      // conteniendo el nombre y esto pasaba en verde. Leer la médica y no
+      // pintarla es exactamente el fallo que este test tiene que cazar.
+      expect(leer(COMPARTIDA)).toContain(`<${componente}`);
       const donde = fuentesTsx().filter((f) => leer(f).includes(componente));
       expect(donde.sort()).toEqual([COMPARTIDA, RESERVADAS].sort());
     },

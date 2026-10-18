@@ -30,6 +30,14 @@ import type { NativeDbClient } from '@/data/client-data';
  * El mensaje del `throw` no se pinta en ningún sitio: lo único que importa es que
  * sea un camino de excepción. La pantalla no distingue este caso del resto de
  * fallos de red, y no tiene por qué.
+ *
+ * UNA COSA QUE CONVIENE SABER AL LEER `audit_log`: `get_player_medical` apunta un
+ * `medical.read` por CADA llamada, y aquí las llamadas no son solo las que parecen.
+ * El SWR revalida al volver a la pantalla y al traer la app a primer plano, de modo
+ * que una misma consulta puede dejar varias líneas. Todas son ciertas —la médica se
+ * le enseñó a esa persona en ese momento—, pero contar líneas NO es contar veces
+ * que alguien decidió mirar. Sin cobertura no se apunta ninguna: ahí se pinta la
+ * copia guardada y no hay viaje al servidor.
  */
 
 /**
