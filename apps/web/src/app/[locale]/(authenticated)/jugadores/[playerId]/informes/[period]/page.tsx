@@ -120,14 +120,16 @@ export default async function InformeFichaPage({ params, searchParams }: Props) 
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
-      <div className="flex items-center justify-between gap-2">
+      {/* En el móvil los botones bajan de línea: en fila medían 571 px en 390. Solo
+          por debajo de sm: en escritorio la fila se queda como estaba. */}
+      <div className="flex flex-wrap items-center justify-between gap-2 sm:flex-nowrap">
         <Button asChild variant="ghost" size="sm">
           <Link href={backHref}>
             <ArrowLeft className="size-4" aria-hidden />
             <span>{t('back_to_reports')}</span>
           </Link>
         </Button>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
           {report ? (
             <PublishToggle
               reportId={report.id}
