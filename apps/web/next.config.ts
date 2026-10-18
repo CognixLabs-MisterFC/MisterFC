@@ -1,6 +1,7 @@
 import type { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
 import { withSentryConfig } from '@sentry/nextjs';
+import { SECURITY_HEADERS } from './src/lib/security-headers';
 
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
@@ -42,6 +43,10 @@ const nextConfig: NextConfig = {
   // F9.B-6/7 — @react-pdf/renderer solo se usa en Route Handlers (runtime
   // nodejs); se externaliza para que no entre en el bundle de cliente/SSR.
   serverExternalPackages: ['@react-pdf/renderer'],
+  // Cabeceras de seguridad básicas en TODAS las respuestas (src/lib/security-headers.ts).
+  async headers() {
+    return [{ source: '/:path*', headers: [...SECURITY_HEADERS] }];
+  },
   // Rework A (A4) — la nav gira en torno al equipo. /categorias se retira:
   //   · /categorias       → /equipos            (listado de equipos)
   //   · /categorias/[id]  → /equipos/plantillas (gestión de categorías)
