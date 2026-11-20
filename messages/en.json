@@ -501,8 +501,6 @@
     "tutor_data_help": "These are your details, not the player’s. Your child’s are in the next section.",
     "child_data_title": "Your child's details",
     "child_data_help": "Review and correct each child's name and date of birth before continuing.",
-    "child_summary_help": "This is what your club gave us. If something looks wrong, tell your club: these are their records and cannot be changed here.",
-    "child_dob_unknown": "not on record",
     "child_first_name": "Child's full name",
     "child_last_name": "Child's surname",
     "child_dob": "Child's date of birth",
