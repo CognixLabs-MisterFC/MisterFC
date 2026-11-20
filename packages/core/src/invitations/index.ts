@@ -16,6 +16,7 @@ export {
   findAcceptProblems,
   playerIdsFromFormKeys,
   validateChildRow,
+  FECHA_PROVISIONAL_JUGADOR,
   isValidChildDob,
   isValidBirthDate,
   CHILD_FIRST_NAME_MAX,

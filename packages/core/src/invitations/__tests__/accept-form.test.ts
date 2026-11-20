@@ -3,6 +3,7 @@ import {
   findAcceptProblems,
   playerIdsFromFormKeys,
   validateChildRow,
+  FECHA_PROVISIONAL_JUGADOR,
   type AcceptFormRules,
 } from '../accept-form';
 
@@ -261,6 +262,17 @@ describe('findAcceptProblems — datos del hijo', () => {
     ).toEqual(['child_dob_invalid']);
   });
 
+  it('la fecha provisional que viene rellena no se puede aceptar sin cambiarla', () => {
+    expect(
+      codes(
+        withRows([
+          { playerId: CHILD_A, firstName: 'Marta', lastName: '', dob: FECHA_PROVISIONAL_JUGADOR },
+        ]),
+        rules
+      )
+    ).toEqual(['child_dob_invalid']);
+  });
+
   it('una fila completa no da problemas', () => {
     expect(
       codes(
@@ -313,6 +325,21 @@ describe('validateChildRow — la regla que comparten cliente y servidor', () =>
     for (const dob of ['', '01-04-2015', '2015-13-40', '1899-12-31', '2999-01-01']) {
       expect(validateChildRow({ firstName: 'Marta', lastName: '', dob })).toBe('child_dob_invalid');
     }
+  });
+
+  // La provisional de los importados de la FFCV es una fecha VÁLIDA (pasada, bien
+  // formada): sin esta regla el padre aceptaría la que viene rellena y se quedaría así.
+  it('rechaza la fecha provisional de los importados de la FFCV', () => {
+    expect(FECHA_PROVISIONAL_JUGADOR).toBe('2026-01-01');
+    expect(
+      validateChildRow({ firstName: 'Marta', lastName: '', dob: FECHA_PROVISIONAL_JUGADOR })
+    ).toBe('child_dob_invalid');
+    // Y con espacios alrededor, que es como puede llegar del input.
+    expect(
+      validateChildRow({ firstName: 'Marta', lastName: '', dob: ` ${FECHA_PROVISIONAL_JUGADOR} ` })
+    ).toBe('child_dob_invalid');
+    // El día de al lado sí vale: la regla es esa fecha, no «2026».
+    expect(validateChildRow({ firstName: 'Marta', lastName: '', dob: '2026-01-02' })).toBeNull();
   });
 });
 

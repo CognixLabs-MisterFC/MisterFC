@@ -12,7 +12,6 @@ import {
 import { ConsentGate } from './consent-gate';
 import type { AccountConsentDoc, ImageConsentDoc, MedicalConsentDoc } from './consent-data';
 import { ChildrenImageSection, type PendingChild } from './child-image-cards';
-import { intlLocale } from '@/lib/intl-locale';
 import {
   collectFormProblems,
   fieldIds,
@@ -74,75 +73,6 @@ function TutorBlock({ children }: { children: ReactNode }) {
         <p className="text-xs text-zinc-400">{t('tutor_data_help')}</p>
       </div>
       {children}
-    </section>
-  );
-}
-
-/**
- * Los datos del hijo QUE YA CONOCEMOS, en los flujos que no los piden.
- *
- * El flujo del invitado nuevo los pinta para confirmar y corregir
- * (`ChildDataSection`). Los otros dos —el rápido y el de cuenta existente— no
- * pintaban NADA del niño: ni nombre, ni fecha, ni equipo. Quien acepta no veía a
- * quién estaba aceptando, y la fecha de nacimiento que el club ya nos dio no se
- * enseñaba en ninguna parte.
- *
- * De SOLO LECTURA, y a propósito: esos dos flujos no llevan el campo oculto
- * `children_data`, así que el servidor no espera cambios del niño por aquí
- * (`parseChildUpdates` solo valida lo que se envía). Enseñar es lo que falta;
- * dejar editar sería otro cambio, en el servidor y con su propio ancla anti-tamper.
- * Si algo no cuadra, el texto manda al club, que es quien puede arreglarlo.
- *
- * La fecha se formatea con `intlLocale(locale)` y nunca con el locale crudo: `va` no
- * es un locale de Intl y caería a en-US (#630). Lo vigila `check:intl-locale`.
- */
-function ChildSummarySection({
-  items,
-  locale,
-}: {
-  items: PendingChild[];
-  locale: string;
-}) {
-  const t = useTranslations('invite');
-  const kids = items.filter(
-    (c): c is PendingChild & { playerId: string } => c.playerId != null,
-  );
-  if (kids.length === 0) return null;
-
-  const fecha = (iso: string | null) => {
-    if (!iso) return t('child_dob_unknown');
-    const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) return t('child_dob_unknown');
-    return new Intl.DateTimeFormat(intlLocale(locale), {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-      timeZone: 'UTC',
-    }).format(d);
-  };
-
-  return (
-    <section className="flex w-full flex-col gap-3 rounded-md border border-zinc-800 bg-zinc-900/30 p-4 text-left">
-      <div>
-        <h2 className="text-sm font-semibold text-zinc-100">{t('child_data_title')}</h2>
-        <p className="text-xs text-zinc-400">{t('child_summary_help')}</p>
-      </div>
-      {kids.map((c) => (
-        <div
-          key={c.playerId}
-          className="flex flex-col gap-0.5 border-t border-zinc-800 pt-3 first:border-t-0 first:pt-0"
-        >
-          <span className="text-sm font-medium text-zinc-100">
-            {c.playerName ?? t('child_unnamed')}
-          </span>
-          <span className="text-xs text-zinc-400">
-            {t('child_dob')}: {fecha(c.playerDob)}
-          </span>
-          <span className="text-xs uppercase tracking-wide text-zinc-500">
-            {c.teamName ?? t('child_no_team')}
-          </span>
-        </div>
-      ))}
     </section>
   );
 }
@@ -469,7 +399,7 @@ export function AcceptForm({
     preAcceptedPrivacy,
     pendingChildren,
     unnamed: t('child_unnamed'),
-    requireChildData: false,
+    requireChildData: true,
     requireProfile: false,
     requireOwnPassword: false,
     requireAdultDeclaration,
@@ -495,7 +425,7 @@ export function AcceptForm({
         problem={problems.find((p) => p.fieldId === fieldIds.adultDeclaration)}
       />
 
-      <ChildSummarySection items={pendingChildren} locale={locale} />
+      <ChildDataSection items={pendingChildren} problems={problems} />
 
       <ChildrenImageSection
         items={pendingChildren}
@@ -754,7 +684,7 @@ export function SignInToAcceptForm({
     preAcceptedPrivacy,
     pendingChildren,
     unnamed: t('child_unnamed'),
-    requireChildData: false,
+    requireChildData: true,
     requireProfile: false,
     requireOwnPassword: true,
     requireAdultDeclaration,
@@ -780,7 +710,7 @@ export function SignInToAcceptForm({
         problem={problemFor(fieldIds.adultDeclaration)}
       />
 
-      <ChildSummarySection items={pendingChildren} locale={locale} />
+      <ChildDataSection items={pendingChildren} problems={problems} />
 
       <ChildrenImageSection
         items={pendingChildren}

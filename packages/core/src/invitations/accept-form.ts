@@ -45,6 +45,26 @@ export function isValidChildDob(s: string): boolean {
   return isValidBirthDate(s);
 }
 
+/**
+ * La fecha PROVISIONAL de los jugadores importados de la FFCV, que no publica la
+ * fecha de nacimiento (medido el 2026-11-20: `ver_equipo.php` da de cada jugador solo
+ * `cod_jugador` y `nombre`). `players.date_of_birth` es NOT NULL, así que la
+ * importación pone esta.
+ *
+ * Por qué ESTA: es de un menor claro, y `player_is_minor` (MN-1) sigue protegiendo al
+ * jugador aunque nadie la corrija —hasta 2044—. Y salta a la vista («0 años»), así que
+ * nadie la toma por real.
+ *
+ * Por qué se RECHAZA aquí: el formulario del alta trae la fecha ya rellena con la de la
+ * ficha. Si se aceptara, el padre pulsa «Aceptar» sin tocarla y la provisional queda
+ * como confirmada para siempre. Decisión de Jose, 2026-11-20.
+ *
+ * Lo que NO cubre: la familia a la que `inviteBatch` vincula sin formulario (su correo
+ * ya era del club) y la que nunca acepta. Esas fichas siguen con esta fecha; se
+ * encuentran con `date_of_birth = FECHA_PROVISIONAL_JUGADOR`.
+ */
+export const FECHA_PROVISIONAL_JUGADOR = '2026-01-01';
+
 export type ChildRowError = 'child_name_required' | 'child_dob_invalid';
 
 /** Valida una fila de datos de hijo. Mismo orden de comprobaciones que el server. */
@@ -59,6 +79,7 @@ export function validateChildRow(row: {
   if (first.length === 0 || first.length > CHILD_FIRST_NAME_MAX) return 'child_name_required';
   if (last.length > CHILD_LAST_NAME_MAX) return 'child_name_required';
   if (!isValidChildDob(dob)) return 'child_dob_invalid';
+  if (dob === FECHA_PROVISIONAL_JUGADOR) return 'child_dob_invalid';
   return null;
 }
 

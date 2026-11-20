@@ -501,8 +501,6 @@
     "tutor_data_help": "Són les teues dades, no les del jugador. Les del teu fill o filla van en el bloc següent.",
     "child_data_title": "Dades del teu fill/a",
     "child_data_help": "Revisa i corregeix el nom i la data de naixement de cada fill/a abans de continuar.",
-    "child_summary_help": "Això és el que ens va donar el teu club. Si alguna cosa no quadra, digues-ho al teu club: són dades seues i ací no es poden canviar.",
-    "child_dob_unknown": "no consta",
     "child_first_name": "Nom complet del fill/a",
     "child_last_name": "Cognoms del fill/a",
     "child_dob": "Data de naixement del fill/a",

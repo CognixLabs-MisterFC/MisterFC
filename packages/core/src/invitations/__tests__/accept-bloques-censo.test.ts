@@ -58,19 +58,27 @@ describe('los tres formularios de aceptar invitación', () => {
     ]);
   });
 
+  // 2026-11-20 (Jose): los TRES dejan CORREGIR los datos del niño. Hasta entonces
+  // dos los enseñaban en solo lectura (I-2). Lo cambia la importación de la FFCV, que
+  // no publica la fecha de nacimiento: los jugadores entran con la provisional
+  // (`FECHA_PROVISIONAL_JUGADOR`) y el único que puede poner la real es la familia al
+  // aceptar. Un formulario de solo lectura dejaría la provisional para siempre en
+  // quien ya tenía cuenta.
   it.each(FORMULARIOS.map((f) => f.nombre))(
-    '%s enseña los datos del niño, para editar o para leer',
+    '%s deja corregir los datos del niño, y los valida',
     (nombre) => {
       const { cuerpo } = FORMULARIOS.find((f) => f.nombre === nombre)!;
-      const pinta =
-        cuerpo.includes('<ChildDataSection') || cuerpo.includes('<ChildSummarySection');
       expect(
-        pinta,
-        `${nombre} no pinta ni <ChildDataSection> (confirmar y corregir) ni ` +
-          `<ChildSummarySection> (solo lectura). Quien acepta no vería a quién está ` +
-          `aceptando, y la fecha de nacimiento que el club ya nos dio no saldría en ` +
-          `ninguna parte.`,
+        cuerpo.includes('<ChildDataSection'),
+        `${nombre} no pinta <ChildDataSection>: la familia no podría poner la fecha ` +
+          `real de un jugador importado de la FFCV, que entra con la provisional.`,
       ).toBe(true);
+      // Sin esto el navegador no valida la fila del niño y la fecha provisional solo
+      // se rechazaría al volver del servidor, con el aviso general.
+      expect(cuerpo, `${nombre} no valida los datos del niño en el navegador`).toContain(
+        'requireChildData: true',
+      );
+      expect(cuerpo).not.toContain('requireChildData: false');
     },
   );
 });
@@ -105,12 +113,5 @@ describe('el marco que dice de quién es cada dato', () => {
     // crea en otra.
     expect(FUENTE).not.toContain('name="date_of_birth"');
     expect(FUENTE).not.toContain('tutor_dob_hint');
-  });
-
-  it('la fecha del niño se formatea con intlLocale, nunca con el locale crudo', () => {
-    // `va` no es un locale de Intl y cae a en-US (#630). Lo vigila también
-    // `check:intl-locale`; aquí queda fijado junto al resto del bloque.
-    expect(FUENTE).toContain('intlLocale(locale)');
-    expect(FUENTE).not.toMatch(/Intl\.DateTimeFormat\(locale\b/);
   });
 });
